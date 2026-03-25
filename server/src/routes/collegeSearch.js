@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
 
     const results = (data.results || []).map(r => ({
       name: r['school.name'],
-      website: r['school.school_url'] ? `https://${r['school.school_url']}` : '',
+      website: r['school.school_url'] ? (r['school.school_url'].startsWith('http') ? r['school.school_url'] : `https://${r['school.school_url']}`) : '',
       city: r['school.city'],
       state: r['school.state'],
     }));
