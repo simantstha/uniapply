@@ -2,15 +2,26 @@ import express from 'express';
 
 const router = express.Router();
 
-// College Scorecard API — US Dept of Education
-// ~6,800 accredited US institutions. DEMO_KEY = 30 req/hour free, no signup.
-// Set COLLEGE_SCORECARD_API_KEY in .env for higher limits (free at api.data.gov/signup)
-const API_KEY = process.env.COLLEGE_SCORECARD_API_KEY || 'DEMO_KEY';
+const API_KEY = process.env.COLLEGE_SCORECARD_API_KEY;
 const BASE_URL = 'https://api.data.gov/ed/collegescorecard/v1/schools.json';
+
+// Simple in-memory cache: key → { results, expiresAt }
+const cache = new Map();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 router.get('/', async (req, res) => {
   const { q } = req.query;
   if (!q || q.length < 2) return res.json([]);
+
+  if (!API_KEY) {
+    return res.status(503).json({ error: 'no_api_key' });
+  }
+
+  const cacheKey = q.toLowerCase().trim();
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return res.json(cached.results);
+  }
 
   try {
     const url = new URL(BASE_URL);
@@ -21,9 +32,12 @@ router.get('/', async (req, res) => {
     url.searchParams.set('api_key', API_KEY);
 
     const response = await fetch(url.toString());
-    if (!response.ok) throw new Error(`API error ${response.status}`);
-
     const data = await response.json();
+
+    if (!response.ok || data.error) {
+      return res.status(503).json({ error: 'api_error', details: data.error?.message });
+    }
+
     const results = (data.results || []).map(r => ({
       name: r['school.name'],
       website: r['school.school_url'] ? `https://${r['school.school_url']}` : '',
@@ -31,9 +45,10 @@ router.get('/', async (req, res) => {
       state: r['school.state'],
     }));
 
+    cache.set(cacheKey, { results, expiresAt: Date.now() + CACHE_TTL });
     res.json(results);
   } catch (err) {
-    res.status(502).json({ error: 'Search unavailable', details: err.message });
+    res.status(503).json({ error: 'fetch_failed', details: err.message });
   }
 });
 

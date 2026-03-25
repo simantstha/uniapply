@@ -264,22 +264,23 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
     setSuggestions(local);
     setOpen(local.length > 0);
 
-    // Then fetch from College Scorecard API (6,800 schools) with debounce
+    // Fetch from College Scorecard API (6,800 schools) with debounce
     clearTimeout(debounceRef.current);
     if (val.length >= 2) {
       debounceRef.current = setTimeout(async () => {
         setLoading(true);
         try {
           const res = await apiClient.get(`/api/college-search?q=${encodeURIComponent(val)}`);
+          // no_api_key → silently keep local results
+          if (res.data?.error === 'no_api_key') return;
           const remote = res.data.map(r => ({ name: r.name, website: r.website, sub: r.city && r.state ? `${r.city}, ${r.state}` : '' }));
-          // Merge: remote results first, then static ones not already covered
           const remoteNames = new Set(remote.map(r => r.name.toLowerCase()));
           const localOnly = local.filter(l => !remoteNames.has(l.name.toLowerCase()));
           const merged = [...remote, ...localOnly].slice(0, 10);
           setSuggestions(merged);
           setOpen(merged.length > 0);
         } catch {
-          // Keep local results on failure
+          // Keep local results on API failure
         } finally {
           setLoading(false);
         }
