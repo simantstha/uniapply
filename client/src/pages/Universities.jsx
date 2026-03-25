@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Plus, Trash2, ExternalLink, Calendar } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine } from 'lucide-react';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
 const STATUSES = ['not_started', 'in_progress', 'submitted', 'accepted', 'rejected', 'waitlisted'];
@@ -152,6 +153,13 @@ export default function Universities() {
                     <ExternalLink size={11} /> Visit website
                   </a>
                 )}
+
+                <Link
+                  to={`/sop/${u.id}`}
+                  className="flex items-center gap-1.5 mt-1 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors w-full justify-center"
+                >
+                  <PenLine size={12} /> Write SOP
+                </Link>
               </div>
             );
           })}
