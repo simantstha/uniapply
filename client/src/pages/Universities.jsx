@@ -132,8 +132,10 @@ export default function Universities() {
                       <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{u.program}</p>
                     </div>
                     <button onClick={() => handleDelete(u.id)}
-                      className="flex-shrink-0 p-1 rounded-lg transition-colors opacity-40 hover:opacity-100"
-                      style={{ color: '#FF3B30' }}>
+                      className="flex-shrink-0 p-1.5 rounded-lg transition-all"
+                      style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
                       <Trash2 size={13} />
                     </button>
                   </div>
