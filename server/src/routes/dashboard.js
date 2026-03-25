@@ -11,7 +11,7 @@ router.get('/stats', async (req, res) => {
   try {
     const [universities, sops, critiques] = await Promise.all([
       prisma.university.count({ where: { userId: req.userId } }),
-      prisma.sOP.count({ where: { userId: req.userId } }),
+      prisma.sOP.count({ where: { userId: req.userId, wordCount: { gt: 0 } } }),
       prisma.sOPCritique.count({
         where: { sop: { userId: req.userId } },
       }),

@@ -79,7 +79,11 @@ export default function SOPWorkshop() {
         }
         setSop(existing);
         sopIdRef.current = existing.id;
-        if (existing.content) editor?.commands.setContent(existing.content);
+        if (existing.content) {
+          editor?.commands.setContent(existing.content);
+          const text = existing.content.replace(/<[^>]*>/g, '');
+          setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
+        }
 
         // Load latest critique
         const critiqueRes = await apiClient.get(`/api/critiques/${existing.id}`);
@@ -211,6 +215,11 @@ export default function SOPWorkshop() {
 
             {critique && !critiquing && (
               <div className="space-y-4">
+                {/* AI Detection */}
+                {critique.aiLikelihood !== null && critique.aiLikelihood !== undefined && (
+                  <AiDetection likelihood={critique.aiLikelihood} reasoning={critique.aiReasoning} />
+                )}
+
                 {/* Scores */}
                 <div>
                   <p className="text-xs font-semibold text-gray-700 mb-2">Scores</p>
@@ -280,6 +289,32 @@ function parseCritique(raw) {
     weaknesses: typeof raw.weaknesses === 'string' ? JSON.parse(raw.weaknesses) : raw.weaknesses,
     suggestions: typeof raw.suggestions === 'string' ? JSON.parse(raw.suggestions) : raw.suggestions,
   };
+}
+
+function AiDetection({ likelihood, reasoning }) {
+  const isHigh = likelihood >= 70;
+  const isMid = likelihood >= 40 && likelihood < 70;
+
+  const color = isHigh ? 'red' : isMid ? 'amber' : 'green';
+  const label = isHigh ? 'Likely AI-generated' : isMid ? 'Possibly AI-assisted' : 'Likely human-written';
+
+  const barColor = { red: 'bg-red-400', amber: 'bg-amber-400', green: 'bg-green-400' }[color];
+  const bgColor = { red: 'bg-red-50 border-red-200', amber: 'bg-amber-50 border-amber-200', green: 'bg-green-50 border-green-200' }[color];
+  const textColor = { red: 'text-red-700', amber: 'text-amber-700', green: 'text-green-700' }[color];
+
+  return (
+    <div className={`rounded-lg border p-3 ${bgColor}`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className={`text-xs font-semibold ${textColor}`}>AI Detection</p>
+        <span className={`text-xs font-bold ${textColor}`}>{likelihood}%</span>
+      </div>
+      <div className="bg-white/60 rounded-full h-1.5 mb-2">
+        <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${likelihood}%` }} />
+      </div>
+      <p className={`text-xs font-medium ${textColor} mb-1`}>{label}</p>
+      {reasoning && <p className={`text-xs ${textColor} opacity-80 leading-relaxed`}>{reasoning}</p>}
+    </div>
+  );
 }
 
 const assessmentStyle = {

@@ -27,6 +27,8 @@ ${sop.content.replace(/<[^>]*>/g, '')}
 
 Provide a detailed, honest critique. Be specific — reference actual sentences or phrases from the SOP.
 
+Also assess whether this SOP appears to be AI-generated or human-written. Look for: overly generic phrases, lack of personal anecdotes, unnaturally perfect structure, absence of specific details, repetitive sentence patterns, and buzzword-heavy language.
+
 Respond ONLY with valid JSON in this exact format:
 {
   "overall_assessment": "weak" | "good" | "strong",
@@ -38,7 +40,9 @@ Respond ONLY with valid JSON in this exact format:
   },
   "strengths": ["<specific strength 1>", "<specific strength 2>", "<specific strength 3>"],
   "weaknesses": ["<specific weakness 1>", "<specific weakness 2>", "<specific weakness 3>"],
-  "suggestions": ["<actionable suggestion 1>", "<actionable suggestion 2>", "<actionable suggestion 3>", "<actionable suggestion 4>", "<actionable suggestion 5>"]
+  "suggestions": ["<actionable suggestion 1>", "<actionable suggestion 2>", "<actionable suggestion 3>", "<actionable suggestion 4>", "<actionable suggestion 5>"],
+  "ai_likelihood": <0-100>,
+  "ai_reasoning": "<1-2 sentence explanation of why it seems human or AI written>"
 }`;
 
   const message = await anthropic.messages.create({

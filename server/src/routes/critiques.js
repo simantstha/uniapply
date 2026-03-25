@@ -50,6 +50,8 @@ router.post('/', async (req, res) => {
         weaknesses: JSON.stringify(result.weaknesses),
         suggestions: JSON.stringify(result.suggestions),
         rawCritiqueText: JSON.stringify(result),
+        aiLikelihood: result.ai_likelihood,
+        aiReasoning: result.ai_reasoning,
       },
     });
 

@@ -99,6 +99,8 @@ model SOPCritique {
   weaknesses        String?
   suggestions       String?
   rawCritiqueText   String?  @map("raw_critique_text")
+  aiLikelihood      Int?     @map("ai_likelihood")
+  aiReasoning       String?  @map("ai_reasoning")
   createdAt         DateTime @default(now()) @map("created_at")
 
   sop SOP @relation(fields: [sopId], references: [id], onDelete: Cascade)
