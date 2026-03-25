@@ -27,7 +27,10 @@ model User {
 model Profile {
   id                       Int      @id @default(autoincrement())
   userId                   Int      @unique @map("user_id")
+  studyLevel               String?  @map("study_level") // 'undergraduate', 'masters', 'phd', 'other'
   gpa                      Float?
+  satScore                 Int?     @map("sat_score")
+  actScore                 Int?     @map("act_score")
   greVerbal                Int?     @map("gre_verbal")
   greQuant                 Int?     @map("gre_quant")
   greWriting               Float?   @map("gre_writing")
@@ -54,6 +57,7 @@ model University {
   userId              Int       @map("user_id")
   name                String
   program             String
+  degreeLevel         String    @default("masters") @map("degree_level") // 'undergraduate', 'masters', 'phd', 'certificate', 'other'
   websiteUrl          String?   @map("website_url")
   category            String
   applicationDeadline DateTime? @map("application_deadline")

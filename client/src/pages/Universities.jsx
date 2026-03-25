@@ -5,6 +5,14 @@ import { Plus, Trash2, ExternalLink, Calendar, PenLine, X } from 'lucide-react';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
 
+const degreeLevelConfig = {
+  undergraduate: { label: 'Undergrad', color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
+  masters:       { label: "Master's",  color: '#0071E3', bg: 'rgba(0,113,227,0.1)' },
+  phd:           { label: 'PhD',       color: '#BF5AF2', bg: 'rgba(191,90,242,0.1)' },
+  certificate:   { label: 'Certificate', color: '#34C759', bg: 'rgba(52,199,89,0.1)' },
+  other:         { label: 'Other',     color: 'var(--text-tertiary)', bg: 'var(--bg-secondary)' },
+};
+
 const categoryConfig = {
   dream:  { color: '#BF5AF2', bg: 'rgba(191,90,242,0.08)',  border: '#BF5AF2', label: 'Dream' },
   target: { color: '#0071E3', bg: 'rgba(0,113,227,0.08)',   border: '#0071E3', label: 'Target' },
@@ -20,7 +28,7 @@ const statusConfig = {
   waitlisted: { label: 'Waitlisted', color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
 };
 
-const emptyForm = { name: '', program: '', websiteUrl: '', category: 'target', applicationDeadline: '', status: 'not_started', notes: '' };
+const emptyForm = { name: '', program: '', degreeLevel: 'masters', websiteUrl: '', category: 'target', applicationDeadline: '', status: 'not_started', notes: '' };
 
 export default function Universities() {
   const [universities, setUniversities] = useState([]);
@@ -127,6 +135,11 @@ export default function Universities() {
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: cat.bg, color: cat.color }}>
                       {cat.label}
                     </span>
+                    {(() => { const dl = degreeLevelConfig[u.degreeLevel] || degreeLevelConfig.masters; return (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: dl.bg, color: dl.color }}>
+                        {dl.label}
+                      </span>
+                    ); })()}
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: stat.bg, color: stat.color }}>
                       {stat.label}
                     </span>
@@ -181,8 +194,18 @@ export default function Universities() {
 
             <form onSubmit={handleAdd} className="space-y-3">
               <MField label="University Name *" value={form.name} onChange={set('name')} required placeholder="e.g. MIT" />
-              <MField label="Program *" value={form.program} onChange={set('program')} required placeholder="e.g. MS Computer Science" />
+              <MField label="Program *" value={form.program} onChange={set('program')} required placeholder="e.g. BS Computer Science" />
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Degree Level *</label>
+                  <select value={form.degreeLevel} onChange={set('degreeLevel')} className="input">
+                    <option value="undergraduate">Undergraduate</option>
+                    <option value="masters">Master's</option>
+                    <option value="phd">PhD</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
                 <div>
                   <label className="label">Category *</label>
                   <select value={form.category} onChange={set('category')} className="input">
@@ -191,10 +214,10 @@ export default function Universities() {
                     <option value="safety">Safety</option>
                   </select>
                 </div>
-                <div>
-                  <label className="label">Deadline</label>
-                  <input type="date" value={form.applicationDeadline} onChange={set('applicationDeadline')} className="input" />
-                </div>
+              </div>
+              <div>
+                <label className="label">Deadline</label>
+                <input type="date" value={form.applicationDeadline} onChange={set('applicationDeadline')} className="input" />
               </div>
               <MField label="Website" value={form.websiteUrl} onChange={set('websiteUrl')} placeholder="https://..." />
               <div>

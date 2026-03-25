@@ -5,13 +5,33 @@ import StarterKit from '@tiptap/starter-kit';
 import apiClient from '../api/client';
 import { Save, ChevronLeft, HelpCircle, X, FileText, Sparkles, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
 
-const GUIDED_QUESTIONS = [
-  { q: 'Why this university?', hint: 'Mention specific faculty, labs, or programs that align with your goals.' },
-  { q: 'What is your unique story?', hint: 'What experiences shaped your academic journey? Be specific and personal.' },
-  { q: 'What are your career goals?', hint: 'Where do you see yourself in 5–10 years? How does this degree help?' },
-  { q: 'Why are you qualified?', hint: 'Highlight key projects, research, or achievements that make you stand out.' },
-  { q: 'What will you contribute?', hint: 'How will you add value to the program and the research community?' },
-];
+const GUIDED_QUESTIONS = {
+  undergraduate: [
+    { q: 'Why this major?', hint: 'What sparked your interest in this field? Share a specific moment or experience that made it click.' },
+    { q: 'Why this university?', hint: 'Mention specific programs, clubs, courses, or values that excite you about this school.' },
+    { q: 'What is your story?', hint: 'What experiences — school, family, community — shaped who you are? Be personal and specific.' },
+    { q: 'What are your goals?', hint: 'What do you want to do after college? How does this degree help you get there?' },
+    { q: 'What makes you stand out?', hint: 'Highlight achievements, projects, leadership, or skills that show your potential.' },
+  ],
+  masters: [
+    { q: 'Why this university?', hint: 'Mention specific faculty, labs, or programs that align with your goals.' },
+    { q: 'What is your unique story?', hint: 'What experiences shaped your academic journey? Be specific and personal.' },
+    { q: 'What are your career goals?', hint: 'Where do you see yourself in 5–10 years? How does this degree help?' },
+    { q: 'Why are you qualified?', hint: 'Highlight key projects, research, or work experience that make you stand out.' },
+    { q: 'What will you contribute?', hint: 'How will you add value to the program and the professional community?' },
+  ],
+  phd: [
+    { q: 'What research question drives you?', hint: 'Be specific about the problem you want to solve and why it matters.' },
+    { q: 'Why this advisor / lab?', hint: 'Name specific faculty whose work aligns with yours. Show you\'ve read their papers.' },
+    { q: 'What is your research background?', hint: 'Detail your most relevant research experience, methods, and findings.' },
+    { q: 'What are your career goals?', hint: 'Academia, industry research, policy? How does this PhD prepare you?' },
+    { q: 'What will you contribute?', hint: 'How does your unique perspective or background strengthen the research community?' },
+  ],
+};
+
+function getGuidedQuestions(degreeLevel) {
+  return GUIDED_QUESTIONS[degreeLevel] || GUIDED_QUESTIONS.masters;
+}
 
 export default function SOPWorkshop() {
   const { universityId } = useParams();
@@ -118,7 +138,9 @@ export default function SOPWorkshop() {
           </button>
           <div className="min-w-0">
             <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{university.name}</h1>
-            <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{university.program}</p>
+            <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
+              {university.program} · {university.degreeLevel === 'undergraduate' ? 'Personal Statement' : 'Statement of Purpose'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
@@ -182,7 +204,7 @@ export default function SOPWorkshop() {
               <button onClick={() => setShowGuide(false)} style={{ color: 'var(--text-tertiary)' }}><X size={13} /></button>
             </div>
             <div className="p-3 space-y-2">
-              {GUIDED_QUESTIONS.map(({ q, hint }, i) => (
+              {getGuidedQuestions(university?.degreeLevel).map(({ q, hint }, i) => (
                 <div key={i} className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
                   <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{i + 1}. {q}</p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hint}</p>
@@ -194,7 +216,7 @@ export default function SOPWorkshop() {
         {mobileTab === 'guide' && (
           <div className="md:hidden flex-1 overflow-y-auto" style={{ background: 'var(--bg-elevated)' }}>
             <div className="p-4 space-y-3">
-              {GUIDED_QUESTIONS.map(({ q, hint }, i) => (
+              {getGuidedQuestions(university?.degreeLevel).map(({ q, hint }, i) => (
                 <div key={i} className="p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
                   <p className="text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>{i + 1}. {q}</p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hint}</p>

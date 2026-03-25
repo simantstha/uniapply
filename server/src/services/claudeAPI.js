@@ -3,31 +3,45 @@ import Anthropic from '@anthropic-ai/sdk';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function generateCritique(sop, profile, university) {
+  const degreeLevel = university.degreeLevel || 'masters';
+  const isUndergrad = degreeLevel === 'undergraduate';
+  const essayType = isUndergrad ? 'Personal Statement' : 'Statement of Purpose';
+
   const profileSection = profile ? `
 STUDENT PROFILE:
+- Applying for: ${degreeLevel.charAt(0).toUpperCase() + degreeLevel.slice(1)} level
 - GPA: ${profile.gpa || 'Not provided'}
-- GRE: V${profile.greVerbal || '?'} Q${profile.greQuant || '?'} W${profile.greWriting || '?'}
+${isUndergrad
+  ? `- SAT: ${profile.satScore || 'Not provided'} | ACT: ${profile.actScore || 'Not provided'}`
+  : `- GRE: V${profile.greVerbal || '?'} Q${profile.greQuant || '?'} W${profile.greWriting || '?'}`
+}
 - TOEFL: ${profile.toeflScore || 'Not provided'} | IELTS: ${profile.ieltsScore || 'Not provided'}
-- Institution: ${profile.undergraduateInstitution || 'Not provided'}
-- Major: ${profile.undergraduateMajor || 'Not provided'}
-- Field of Study: ${profile.fieldOfStudy || 'Not provided'}
+- ${isUndergrad ? 'High School / Previous Institution' : 'Undergraduate Institution'}: ${profile.undergraduateInstitution || 'Not provided'}
+- ${isUndergrad ? 'Intended Major' : 'Major / Field'}: ${profile.undergraduateMajor || profile.fieldOfStudy || 'Not provided'}
 - Career Goals: ${profile.careerGoals || 'Not provided'}
-- Work Experience: ${profile.workExperienceYears ? profile.workExperienceYears + ' years' : 'Not provided'}
+${!isUndergrad ? `- Work Experience: ${profile.workExperienceYears ? profile.workExperienceYears + ' years' : 'Not provided'}` : ''}
 `.trim() : 'STUDENT PROFILE: Not provided';
 
-  const prompt = `You are an expert admissions counselor reviewing a Statement of Purpose for a graduate program application.
+  const levelContext = isUndergrad
+    ? `This is an undergraduate application. Evaluate the essay for: genuine personal story and passion for the subject, intellectual curiosity, extracurricular depth, clear articulation of why this major/school, and authentic voice. Do NOT penalize for lack of professional experience.`
+    : `This is a ${degreeLevel} program application. Evaluate for: research focus, professional experience, academic achievements, fit with the program's faculty/labs, and clarity of career trajectory.`;
+
+  const prompt = `You are an expert admissions counselor reviewing a ${essayType} for a ${degreeLevel} program application.
 
 ${profileSection}
 
 TARGET UNIVERSITY: ${university.name}
 PROGRAM: ${university.program}
+DEGREE LEVEL: ${degreeLevel}
 
-STATEMENT OF PURPOSE:
+${essayType.toUpperCase()}:
 ${sop.content.replace(/<[^>]*>/g, '')}
 
-Provide a detailed, honest critique. Be specific — reference actual sentences or phrases from the SOP.
+${levelContext}
 
-Also assess whether this SOP appears to be AI-generated or human-written. Look for: overly generic phrases, lack of personal anecdotes, unnaturally perfect structure, absence of specific details, repetitive sentence patterns, and buzzword-heavy language.
+Provide a detailed, honest critique. Be specific — reference actual sentences or phrases from the essay.
+
+Also assess whether this essay appears to be AI-generated or human-written. Look for: overly generic phrases, lack of personal anecdotes, unnaturally perfect structure, absence of specific details, repetitive sentence patterns, and buzzword-heavy language.
 
 Respond ONLY with valid JSON in this exact format:
 {
