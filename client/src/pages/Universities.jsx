@@ -61,6 +61,7 @@ export default function Universities() {
     try {
       const payload = { ...form };
       if (!payload.applicationDeadline) delete payload.applicationDeadline;
+      else payload.applicationDeadline = new Date(payload.applicationDeadline).toISOString();
       await apiClient.post('/api/universities', payload);
       setShowModal(false);
       setForm(emptyForm);

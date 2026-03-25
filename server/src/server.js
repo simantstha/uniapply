@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import universitiesRoutes from './routes/universities.js';
 import sopsRoutes from './routes/sops.js';
+import critiquesRoutes from './routes/critiques.js';
 import dashboardRoutes from './routes/dashboard.js';
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/universities', universitiesRoutes);
 app.use('/api/sops', sopsRoutes);
+app.use('/api/critiques', critiquesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
