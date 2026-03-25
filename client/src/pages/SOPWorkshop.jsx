@@ -24,6 +24,7 @@ export default function SOPWorkshop() {
   const [critique, setCritique] = useState(null);
   const [critiquing, setCritiquing] = useState(false);
   const [critiqueError, setCritiqueError] = useState('');
+  const [mobileTab, setMobileTab] = useState('editor'); // 'editor' | 'critique'
   const saveTimer = useRef(null);
   const sopIdRef = useRef(null);
 
@@ -105,33 +106,33 @@ export default function SOPWorkshop() {
   );
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="flex flex-col flex-1 overflow-hidden" style={{ background: 'var(--bg)' }}>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-5 py-3 border-b flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
           <button onClick={() => navigate('/universities')}
-            className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-tertiary)' }}
+            className="p-1.5 rounded-lg transition-colors flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
             onMouseLeave={e => e.currentTarget.style.background = ''}>
             <ChevronLeft size={16} />
           </button>
-          <div>
-            <h1 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{university.name}</h1>
-            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{university.program}</p>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{university.name}</h1>
+            <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{university.program}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+          <span className="hidden sm:flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
             <FileText size={11} />{wordCount} words
           </span>
           <SaveIndicator status={saveStatus} />
           <button onClick={manualSave}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
+            className="flex items-center gap-1 px-2 md:px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
             style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
-            <Save size={11} /> Save
+            <Save size={11} /><span className="hidden sm:inline ml-1">Save</span>
           </button>
           <button onClick={() => setShowGuide(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
             style={showGuide
               ? { background: 'rgba(0,113,227,0.1)', borderColor: 'rgba(0,113,227,0.3)', color: 'var(--accent)' }
               : { color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
@@ -140,12 +141,25 @@ export default function SOPWorkshop() {
         </div>
       </div>
 
+      {/* Mobile tab switcher */}
+      <div className="flex md:hidden border-b flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+        {[{ id: 'editor', label: 'Editor' }, { id: 'guide', label: 'Guide' }, { id: 'critique', label: 'AI Critique' }].map(tab => (
+          <button key={tab.id} onClick={() => setMobileTab(tab.id)}
+            className="flex-1 py-2.5 text-xs font-medium transition-all"
+            style={mobileTab === tab.id
+              ? { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' }
+              : { color: 'var(--text-secondary)', borderBottom: '2px solid transparent' }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-1 overflow-hidden">
         {/* Editor */}
-        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg)' }}>
-          <div className="max-w-2xl mx-auto px-8 py-6">
+        <div className={`flex-1 overflow-y-auto ${mobileTab !== 'editor' ? 'hidden md:block' : ''}`} style={{ background: 'var(--bg)' }}>
+          <div className="max-w-2xl mx-auto px-4 md:px-8 py-4 md:py-6">
             <Toolbar editor={editor} />
-            <div className="card shadow-apple-sm p-6 mt-3 focus-within:ring-2 transition-all" style={{ '--tw-ring-color': 'rgba(0,113,227,0.3)' }}>
+            <div className="card shadow-apple-sm p-4 md:p-6 mt-3 focus-within:ring-2 transition-all" style={{ '--tw-ring-color': 'rgba(0,113,227,0.3)' }}>
               <EditorContent editor={editor} />
             </div>
             <div className="flex items-center justify-between mt-3">
@@ -160,9 +174,9 @@ export default function SOPWorkshop() {
           </div>
         </div>
 
-        {/* Guide Panel */}
+        {/* Guide Panel — sidebar on desktop, tab on mobile */}
         {showGuide && (
-          <div className="w-64 border-l overflow-y-auto flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+          <div className="hidden md:block w-64 border-l overflow-y-auto flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
               <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Writing Guide</span>
               <button onClick={() => setShowGuide(false)} style={{ color: 'var(--text-tertiary)' }}><X size={13} /></button>
@@ -177,9 +191,21 @@ export default function SOPWorkshop() {
             </div>
           </div>
         )}
+        {mobileTab === 'guide' && (
+          <div className="md:hidden flex-1 overflow-y-auto" style={{ background: 'var(--bg-elevated)' }}>
+            <div className="p-4 space-y-3">
+              {GUIDED_QUESTIONS.map(({ q, hint }, i) => (
+                <div key={i} className="p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                  <p className="text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>{i + 1}. {q}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hint}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Critique Panel */}
-        <div className="w-80 border-l overflow-y-auto flex-shrink-0 flex flex-col" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+        {/* Critique Panel — sidebar on desktop, tab on mobile */}
+        <div className={`border-l overflow-y-auto flex-shrink-0 flex flex-col md:w-80 ${mobileTab === 'critique' ? 'flex-1' : 'hidden md:flex'}`} style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
           <div className="px-4 py-3 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
             <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>AI Critique</span>
             {critique && <AssessmentBadge value={critique.overallAssessment} />}

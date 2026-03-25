@@ -6,9 +6,9 @@ import { Plus, Trash2, ExternalLink, Calendar, PenLine, X } from 'lucide-react';
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
 
 const categoryConfig = {
-  dream: { color: '#BF5AF2', bg: 'rgba(191,90,242,0.08)', border: 'rgba(191,90,242,0.25)', label: 'Dream' },
-  target: { color: '#0071E3', bg: 'rgba(0,113,227,0.08)', border: 'rgba(0,113,227,0.25)', label: 'Target' },
-  safety: { color: '#34C759', bg: 'rgba(52,199,89,0.08)', border: 'rgba(52,199,89,0.25)', label: 'Safety' },
+  dream:  { color: '#BF5AF2', bg: 'rgba(191,90,242,0.08)',  border: '#BF5AF2', label: 'Dream' },
+  target: { color: '#0071E3', bg: 'rgba(0,113,227,0.08)',   border: '#0071E3', label: 'Target' },
+  safety: { color: '#34C759', bg: 'rgba(52,199,89,0.08)',   border: '#34C759', label: 'Safety' },
 };
 
 const statusConfig = {
@@ -67,21 +67,21 @@ export default function Universities() {
   const filtered = filter === 'all' ? universities : universities.filter(u => u.category === filter);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-5 md:mb-8">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Universities</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Universities</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{universities.length} added</p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="btn-primary flex items-center gap-2">
-          <Plus size={14} strokeWidth={2.5} /> Add University
+          className="btn-primary flex items-center gap-1.5">
+          <Plus size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Add University</span><span className="sm:hidden">Add</span>
         </button>
       </div>
 
       {/* Filter */}
-      <div className="flex items-center gap-1.5 mb-6 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-secondary)' }}>
+      <div className="flex items-center gap-1.5 mb-5 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-secondary)' }}>
         {CATEGORIES.map(c => (
           <button key={c} onClick={() => setFilter(c)}
             className="px-3.5 py-1.5 rounded-lg text-xs font-medium capitalize transition-all"
@@ -107,8 +107,9 @@ export default function Universities() {
             const cat = categoryConfig[u.category];
             const stat = statusConfig[u.status];
             return (
-              <div key={u.id} className="card shadow-apple-sm hover:shadow-apple transition-all flex flex-col"
-                style={{ borderColor: cat.border }}>
+              <div key={u.id} className="card shadow-apple-sm hover:shadow-apple transition-all flex flex-col overflow-hidden">
+                {/* Colored top stripe */}
+                <div className="h-1 w-full flex-shrink-0" style={{ background: cat.border }} />
                 <div className="p-5 flex-1">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">

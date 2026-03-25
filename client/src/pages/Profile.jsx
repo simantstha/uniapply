@@ -55,17 +55,17 @@ export default function Profile() {
   );
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Profile</h1>
+    <div className="p-4 md:p-8 max-w-2xl">
+      <div className="mb-5 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Profile</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Academic background used for SOP critiques</p>
       </div>
 
       {/* Step pills */}
-      <div className="flex items-center gap-1.5 mb-6 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-secondary)' }}>
+      <div className="flex items-center gap-1.5 mb-5 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-secondary)' }}>
         {steps.map(s => (
           <button key={s.id} onClick={() => setStep(s.id)}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+            className="px-3 md:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={step === s.id
               ? { background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
               : { color: 'var(--text-secondary)' }}>
@@ -74,7 +74,7 @@ export default function Profile() {
         ))}
       </div>
 
-      <div className="card p-6 shadow-apple-sm">
+      <div className="card p-4 md:p-6 shadow-apple-sm">
         {step === 1 && (
           <div className="space-y-4">
             <SectionTitle>Academic Background</SectionTitle>
@@ -89,7 +89,7 @@ export default function Profile() {
         {step === 2 && (
           <div className="space-y-4">
             <SectionTitle>Test Scores <span className="text-xs font-normal ml-1" style={{ color: 'var(--text-tertiary)' }}>Leave blank if not applicable</span></SectionTitle>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <Field label="GRE Verbal" value={form.greVerbal} onChange={set('greVerbal')} placeholder="130–170" type="number" />
               <Field label="GRE Quant" value={form.greQuant} onChange={set('greQuant')} placeholder="130–170" type="number" />
               <Field label="GRE Writing" value={form.greWriting} onChange={set('greWriting')} placeholder="0–6" type="number" />
