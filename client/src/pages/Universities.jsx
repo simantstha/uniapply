@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Loader2 } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
@@ -250,19 +250,45 @@ export default function Universities() {
 
 function UniversityAutocomplete({ value, onChange, onSelect }) {
   const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
 
   const handleChange = (e) => {
     const val = e.target.value;
     onChange(val);
-    const results = searchUniversities(val);
-    setSuggestions(results);
-    setOpen(results.length > 0);
+
+    // Show static results immediately
+    const local = searchUniversities(val);
+    setSuggestions(local);
+    setOpen(local.length > 0);
+
+    // Then fetch from College Scorecard API (6,800 schools) with debounce
+    clearTimeout(debounceRef.current);
+    if (val.length >= 2) {
+      debounceRef.current = setTimeout(async () => {
+        setLoading(true);
+        try {
+          const res = await apiClient.get(`/api/college-search?q=${encodeURIComponent(val)}`);
+          const remote = res.data.map(r => ({ name: r.name, website: r.website, sub: r.city && r.state ? `${r.city}, ${r.state}` : '' }));
+          // Merge: remote results first, then static ones not already covered
+          const remoteNames = new Set(remote.map(r => r.name.toLowerCase()));
+          const localOnly = local.filter(l => !remoteNames.has(l.name.toLowerCase()));
+          const merged = [...remote, ...localOnly].slice(0, 10);
+          setSuggestions(merged);
+          setOpen(merged.length > 0);
+        } catch {
+          // Keep local results on failure
+        } finally {
+          setLoading(false);
+        }
+      }, 350);
+    }
   };
 
   const handleSelect = (s) => {
-    onSelect({ name: s.name, websiteUrl: s.website });
+    onSelect({ name: s.name, websiteUrl: s.website || s.websiteUrl || '' });
     setSuggestions([]);
     setOpen(false);
   };
@@ -283,14 +309,15 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
           onChange={handleChange}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
           required
-          placeholder="Search US universities..."
-          className="input pl-8"
+          placeholder="Search 6,800+ US universities..."
+          className="input pl-8 pr-8"
         />
+        {loading && <Loader2 size={12} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" style={{ color: 'var(--text-tertiary)' }} />}
       </div>
 
-      {open && (
+      {open && suggestions.length > 0 && (
         <div className="absolute z-10 w-full mt-1 rounded-xl shadow-apple-lg overflow-hidden"
-          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', maxHeight: '260px', overflowY: 'auto' }}>
           {suggestions.map((s, i) => (
             <button key={i} type="button" onMouseDown={() => handleSelect(s)}
               className="w-full text-left px-3.5 py-2.5 transition-colors"
@@ -298,7 +325,9 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
               onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
               onMouseLeave={e => e.currentTarget.style.background = ''}>
               <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{s.website.replace('https://', '')}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                {s.sub || (s.website || '').replace('https://', '')}
+              </p>
             </button>
           ))}
         </div>

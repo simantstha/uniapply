@@ -7,6 +7,7 @@ import universitiesRoutes from './routes/universities.js';
 import sopsRoutes from './routes/sops.js';
 import critiquesRoutes from './routes/critiques.js';
 import dashboardRoutes from './routes/dashboard.js';
+import collegeSearchRoutes from './routes/collegeSearch.js';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/api/universities', universitiesRoutes);
 app.use('/api/sops', sopsRoutes);
 app.use('/api/critiques', critiquesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/college-search', collegeSearchRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
