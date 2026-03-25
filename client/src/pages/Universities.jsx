@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Loader2 } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
@@ -248,12 +248,8 @@ export default function Universities() {
   );
 }
 
-// Session-level client cache — same query never hits the server twice
-const apiCache = new Map();
-
 function UniversityAutocomplete({ value, onChange, onSelect }) {
   const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
@@ -262,45 +258,28 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
     const val = e.target.value;
     onChange(val);
 
-    // Always show static results instantly (no network needed)
+    // Static list: instant, no network
     const local = searchUniversities(val);
     setSuggestions(local);
     setOpen(local.length > 0);
 
+    // Server search: debounced, but server now searches in-memory (no API call per request)
     clearTimeout(debounceRef.current);
-
-    // Only hit the API when:
-    // 1. Query is 3+ chars (skip single/double chars)
-    // 2. Static list has fewer than 4 results (well-known schools like Harvard/MIT don't need API)
-    if (val.length >= 3 && local.length < 4) {
+    if (val.length >= 2) {
       debounceRef.current = setTimeout(async () => {
-        const cacheKey = val.toLowerCase().trim();
-
-        // Return cached result instantly, no network call
-        if (apiCache.has(cacheKey)) {
-          const cached = apiCache.get(cacheKey);
-          setSuggestions(cached);
-          setOpen(cached.length > 0);
-          return;
-        }
-
-        setLoading(true);
         try {
           const res = await apiClient.get(`/api/college-search?q=${encodeURIComponent(val)}`);
-          if (res.data?.error === 'no_api_key') return;
-          const remote = res.data.map(r => ({ name: r.name, website: r.website, sub: r.city && r.state ? `${r.city}, ${r.state}` : '' }));
+          const remote = res.data || [];
+          if (!remote.length) return;
           const remoteNames = new Set(remote.map(r => r.name.toLowerCase()));
           const localOnly = local.filter(l => !remoteNames.has(l.name.toLowerCase()));
           const merged = [...remote, ...localOnly].slice(0, 10);
-          apiCache.set(cacheKey, merged);
           setSuggestions(merged);
           setOpen(merged.length > 0);
         } catch {
           // Keep local results on failure
-        } finally {
-          setLoading(false);
         }
-      }, 500);
+      }, 200);
     }
   };
 
@@ -329,7 +308,6 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
           placeholder="Search 6,800+ US universities..."
           className="input pl-8 pr-8"
         />
-        {loading && <Loader2 size={12} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" style={{ color: 'var(--text-tertiary)' }} />}
       </div>
 
       {open && suggestions.length > 0 && (
