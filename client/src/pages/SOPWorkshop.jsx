@@ -30,9 +30,7 @@ export default function SOPWorkshop() {
   const editor = useEditor({
     extensions: [StarterKit],
     content: '',
-    editorProps: {
-      attributes: { class: 'prose prose-sm max-w-none focus:outline-none min-h-[400px] p-1' },
-    },
+    editorProps: { attributes: { class: 'prose prose-sm max-w-none focus:outline-none min-h-[400px] p-1' } },
     onUpdate: ({ editor }) => {
       const text = editor.getText();
       setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
@@ -48,9 +46,7 @@ export default function SOPWorkshop() {
     try {
       await apiClient.put(`/api/sops/${sopIdRef.current}`, { content });
       setSaveStatus('saved');
-    } catch {
-      setSaveStatus('unsaved');
-    }
+    } catch { setSaveStatus('unsaved'); }
   }, []);
 
   const manualSave = async () => {
@@ -61,19 +57,17 @@ export default function SOPWorkshop() {
 
   useEffect(() => {
     apiClient.get(`/api/universities/${universityId}`)
-      .then((res) => setUniversity(res.data))
+      .then(res => setUniversity(res.data))
       .catch(() => navigate('/universities'));
 
     apiClient.get(`/api/sops?universityId=${universityId}`)
-      .then(async (res) => {
+      .then(async res => {
         let existing;
         if (res.data.length > 0) {
           existing = res.data[0];
         } else {
           const created = await apiClient.post('/api/sops', {
-            universityId: parseInt(universityId),
-            title: 'Statement of Purpose',
-            content: '',
+            universityId: parseInt(universityId), title: 'Statement of Purpose', content: '',
           });
           existing = created.data;
         }
@@ -84,12 +78,8 @@ export default function SOPWorkshop() {
           const text = existing.content.replace(/<[^>]*>/g, '');
           setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
         }
-
-        // Load latest critique
         const critiqueRes = await apiClient.get(`/api/critiques/${existing.id}`);
-        if (critiqueRes.data.length > 0) {
-          setCritique(parseCritique(critiqueRes.data[0]));
-        }
+        if (critiqueRes.data.length > 0) setCritique(parseCritique(critiqueRes.data[0]));
       });
   }, [universityId, editor]);
 
@@ -105,74 +95,83 @@ export default function SOPWorkshop() {
       setCritique(parseCritique(res.data));
     } catch (err) {
       setCritiqueError(err.response?.data?.error || 'Failed to generate critique');
-    } finally {
-      setCritiquing(false);
-    }
+    } finally { setCritiquing(false); }
   };
 
-  if (!university) return <div className="p-8 text-sm text-gray-400">Loading...</div>;
+  if (!university) return (
+    <div className="flex items-center justify-center h-full">
+      <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen" style={{ background: 'var(--bg)' }}>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center justify-between px-5 py-3 border-b flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/universities')} className="text-gray-400 hover:text-gray-600">
-            <ChevronLeft size={18} />
+          <button onClick={() => navigate('/universities')}
+            className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+            onMouseLeave={e => e.currentTarget.style.background = ''}>
+            <ChevronLeft size={16} />
           </button>
           <div>
-            <h1 className="text-sm font-semibold text-gray-900">{university.name}</h1>
-            <p className="text-xs text-gray-400">{university.program}</p>
+            <h1 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{university.name}</h1>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{university.program}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-xs text-gray-400">
-            <FileText size={12} />{wordCount} words
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            <FileText size={11} />{wordCount} words
           </span>
           <SaveIndicator status={saveStatus} />
-          <button onClick={manualSave} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-            <Save size={12} /> Save
+          <button onClick={manualSave}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
+            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
+            <Save size={11} /> Save
           </button>
-          <button
-            onClick={() => setShowGuide(v => !v)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${showGuide ? 'bg-blue-50 border-blue-200 text-blue-600' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-          >
-            <HelpCircle size={12} /> Guide
+          <button onClick={() => setShowGuide(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
+            style={showGuide
+              ? { background: 'rgba(0,113,227,0.1)', borderColor: 'rgba(0,113,227,0.3)', color: 'var(--accent)' }
+              : { color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
+            <HelpCircle size={11} /> Guide
           </button>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Editor */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg)' }}>
           <div className="max-w-2xl mx-auto px-8 py-6">
             <Toolbar editor={editor} />
-            <div className="border border-gray-200 rounded-xl p-6 mt-3 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+            <div className="card shadow-apple-sm p-6 mt-3 focus-within:ring-2 transition-all" style={{ '--tw-ring-color': 'rgba(0,113,227,0.3)' }}>
               <EditorContent editor={editor} />
             </div>
             <div className="flex items-center justify-between mt-3">
-              <p className="text-xs text-gray-300">
-                Auto-saves every 30s · v{sop?.version || 1}
-              </p>
-              <div className="w-32 bg-gray-100 rounded-full h-1">
-                <div className="bg-blue-400 h-1 rounded-full transition-all" style={{ width: `${Math.min((wordCount / 1000) * 100, 100)}%` }} />
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Auto-saves every 30s · v{sop?.version || 1}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: wordCount >= 1000 ? '#34C759' : 'var(--text-tertiary)' }}>{wordCount}/1000</span>
+                <div className="w-24 rounded-full h-1" style={{ background: 'var(--border)' }}>
+                  <div className="h-1 rounded-full transition-all" style={{ width: `${Math.min((wordCount / 1000) * 100, 100)}%`, background: wordCount >= 800 ? '#34C759' : 'var(--accent)' }} />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Guided Questions Panel */}
+        {/* Guide Panel */}
         {showGuide && (
-          <div className="w-64 border-l border-gray-200 bg-gray-50 overflow-y-auto flex-shrink-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
-              <span className="text-xs font-semibold text-gray-800">Writing Guide</span>
-              <button onClick={() => setShowGuide(false)} className="text-gray-400 hover:text-gray-600"><X size={13} /></button>
+          <div className="w-64 border-l overflow-y-auto flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+              <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Writing Guide</span>
+              <button onClick={() => setShowGuide(false)} style={{ color: 'var(--text-tertiary)' }}><X size={13} /></button>
             </div>
-            <div className="p-3 space-y-3">
+            <div className="p-3 space-y-2">
               {GUIDED_QUESTIONS.map(({ q, hint }, i) => (
-                <div key={i} className="bg-white rounded-lg border border-gray-200 p-3">
-                  <p className="text-xs font-semibold text-gray-800 mb-1">{i + 1}. {q}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed">{hint}</p>
+                <div key={i} className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{i + 1}. {q}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hint}</p>
                 </div>
               ))}
             </div>
@@ -180,27 +179,30 @@ export default function SOPWorkshop() {
         )}
 
         {/* Critique Panel */}
-        <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto flex-shrink-0 flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-800">AI Critique</span>
-            {critique && <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${assessmentStyle[critique.overallAssessment]}`}>{critique.overallAssessment}</span>}
+        <div className="w-80 border-l overflow-y-auto flex-shrink-0 flex flex-col" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+          <div className="px-4 py-3 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>AI Critique</span>
+            {critique && <AssessmentBadge value={critique.overallAssessment} />}
           </div>
 
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 overflow-y-auto">
             {!critique && !critiquing && (
-              <div className="flex flex-col items-center justify-center h-full text-center gap-3">
-                <div className="w-12 h-12 bg-violet-50 rounded-full flex items-center justify-center">
-                  <Sparkles size={20} className="text-violet-400" />
+              <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-8">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(191,90,242,0.1)' }}>
+                  <Sparkles size={20} style={{ color: '#BF5AF2' }} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Get AI Feedback</p>
-                  <p className="text-xs text-gray-400">Write at least 50 words, then get detailed critique on your SOP.</p>
+                  <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Get AI Feedback</p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    Write at least 50 words to get detailed feedback on authenticity, clarity, and impact.
+                  </p>
                 </div>
                 {critiqueError && (
-                  <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{critiqueError}</p>
+                  <p className="text-xs px-3 py-2 rounded-xl w-full" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>{critiqueError}</p>
                 )}
-                <button onClick={handleGetCritique} disabled={critiquing || wordCount < 50}
-                  className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-medium rounded-lg transition-colors">
+                <button onClick={handleGetCritique} disabled={wordCount < 50}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white transition-all active:scale-95 disabled:opacity-40"
+                  style={{ background: '#BF5AF2' }}>
                   <Sparkles size={12} /> Get Critique
                 </button>
               </div>
@@ -208,54 +210,49 @@ export default function SOPWorkshop() {
 
             {critiquing && (
               <div className="flex flex-col items-center justify-center h-full gap-3">
-                <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs text-gray-500">Analysing your SOP...</p>
+                <div className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#BF5AF2', borderTopColor: 'transparent' }} />
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Analysing your SOP...</p>
               </div>
             )}
 
             {critique && !critiquing && (
               <div className="space-y-4">
                 {/* AI Detection */}
-                {critique.aiLikelihood !== null && critique.aiLikelihood !== undefined && (
+                {critique.aiLikelihood != null && (
                   <AiDetection likelihood={critique.aiLikelihood} reasoning={critique.aiReasoning} />
                 )}
 
                 {/* Scores */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-700 mb-2">Scores</p>
-                  <div className="space-y-2">
-                    {[
-                      { label: 'Authenticity', value: critique.authenticityScore },
-                      { label: 'Specificity', value: critique.specificityScore },
-                      { label: 'Clarity', value: critique.clarityScore },
-                      { label: 'Impact', value: critique.impactScore },
-                    ].map(({ label, value }) => (
-                      <div key={label}>
-                        <div className="flex justify-between text-xs text-gray-600 mb-0.5">
-                          <span>{label}</span><span className="font-medium">{value}/10</span>
-                        </div>
-                        <div className="bg-gray-100 rounded-full h-1.5">
-                          <div className="bg-violet-400 h-1.5 rounded-full" style={{ width: `${value * 10}%` }} />
-                        </div>
+                <div className="p-3 rounded-xl space-y-2.5" style={{ background: 'var(--bg-secondary)' }}>
+                  {[
+                    { label: 'Authenticity', value: critique.authenticityScore },
+                    { label: 'Specificity', value: critique.specificityScore },
+                    { label: 'Clarity', value: critique.clarityScore },
+                    { label: 'Impact', value: critique.impactScore },
+                  ].map(({ label, value }) => (
+                    <div key={label}>
+                      <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>
+                        <span>{label}</span>
+                        <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{value}/10</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="rounded-full h-1.5" style={{ background: 'var(--border)' }}>
+                        <div className="h-1.5 rounded-full transition-all" style={{ width: `${value * 10}%`, background: value >= 7 ? '#34C759' : value >= 4 ? '#FF9F0A' : '#FF3B30' }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Strengths */}
-                <CritiqueSection icon={<CheckCircle size={13} className="text-green-500" />} title="Strengths" items={critique.strengths} color="green" />
+                <CritiqueSection icon={<CheckCircle size={13} />} title="Strengths" items={critique.strengths} color="#34C759" bg="rgba(52,199,89,0.08)" />
+                <CritiqueSection icon={<AlertCircle size={13} />} title="Weaknesses" items={critique.weaknesses} color="#FF9F0A" bg="rgba(255,159,10,0.08)" />
+                <CritiqueSection icon={<TrendingUp size={13} />} title="Suggestions" items={critique.suggestions} color="#0071E3" bg="rgba(0,113,227,0.08)" />
 
-                {/* Weaknesses */}
-                <CritiqueSection icon={<AlertCircle size={13} className="text-amber-500" />} title="Weaknesses" items={critique.weaknesses} color="amber" />
-
-                {/* Suggestions */}
-                <CritiqueSection icon={<TrendingUp size={13} className="text-blue-500" />} title="Suggestions" items={critique.suggestions} color="blue" />
+                {critiqueError && <p className="text-xs" style={{ color: '#FF3B30' }}>{critiqueError}</p>}
 
                 <button onClick={handleGetCritique} disabled={critiquing}
-                  className="w-full flex items-center justify-center gap-2 py-2 bg-violet-50 hover:bg-violet-100 text-violet-600 text-xs font-medium rounded-lg transition-colors border border-violet-200">
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all border"
+                  style={{ color: '#BF5AF2', borderColor: 'rgba(191,90,242,0.3)', background: 'rgba(191,90,242,0.06)' }}>
                   <Sparkles size={12} /> Re-critique
                 </button>
-                {critiqueError && <p className="text-xs text-red-500">{critiqueError}</p>}
               </div>
             )}
           </div>
@@ -265,19 +262,55 @@ export default function SOPWorkshop() {
   );
 }
 
-function CritiqueSection({ icon, title, items, color }) {
-  const colors = { green: 'bg-green-50 text-green-700', amber: 'bg-amber-50 text-amber-700', blue: 'bg-blue-50 text-blue-700' };
+function AssessmentBadge({ value }) {
+  const config = {
+    weak: { color: '#FF3B30', bg: 'rgba(255,59,48,0.1)' },
+    good: { color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
+    strong: { color: '#34C759', bg: 'rgba(52,199,89,0.1)' },
+  };
+  const c = config[value] || config.good;
+  return (
+    <span className="text-xs px-2 py-0.5 rounded-full font-medium capitalize" style={{ color: c.color, background: c.bg }}>
+      {value}
+    </span>
+  );
+}
+
+function CritiqueSection({ icon, title, items, color, bg }) {
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-2">
+      <div className="flex items-center gap-1.5 mb-2" style={{ color }}>
         {icon}
-        <p className="text-xs font-semibold text-gray-700">{title}</p>
+        <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
       </div>
       <ul className="space-y-1.5">
-        {items.map((item, i) => (
-          <li key={i} className={`text-xs px-2.5 py-1.5 rounded-lg ${colors[color]}`}>{item}</li>
+        {items?.map((item, i) => (
+          <li key={i} className="text-xs px-3 py-2 rounded-xl leading-relaxed" style={{ background: bg, color: 'var(--text-primary)' }}>{item}</li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function AiDetection({ likelihood, reasoning }) {
+  const isHigh = likelihood >= 70;
+  const isMid = likelihood >= 40;
+  const color = isHigh ? '#FF3B30' : isMid ? '#FF9F0A' : '#34C759';
+  const bg = isHigh ? 'rgba(255,59,48,0.08)' : isMid ? 'rgba(255,159,10,0.08)' : 'rgba(52,199,89,0.08)';
+  const border = isHigh ? 'rgba(255,59,48,0.2)' : isMid ? 'rgba(255,159,10,0.2)' : 'rgba(52,199,89,0.2)';
+  const label = isHigh ? 'Likely AI-generated' : isMid ? 'Possibly AI-assisted' : 'Likely human-written';
+
+  return (
+    <div className="p-3 rounded-xl border" style={{ background: bg, borderColor: border }}>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-xs font-semibold" style={{ color }}>AI Detection</p>
+        <span className="text-xs font-bold" style={{ color }}>{likelihood}%</span>
+      </div>
+      <div className="rounded-full h-1.5 mb-2" style={{ background: 'rgba(0,0,0,0.08)' }}>
+        <div className="h-1.5 rounded-full transition-all" style={{ width: `${likelihood}%`, background: color }} />
+      </div>
+      <p className="text-xs font-medium mb-1" style={{ color }}>{label}</p>
+      {reasoning && <p className="text-xs leading-relaxed" style={{ color, opacity: 0.8 }}>{reasoning}</p>}
     </div>
   );
 }
@@ -291,54 +324,25 @@ function parseCritique(raw) {
   };
 }
 
-function AiDetection({ likelihood, reasoning }) {
-  const isHigh = likelihood >= 70;
-  const isMid = likelihood >= 40 && likelihood < 70;
-
-  const color = isHigh ? 'red' : isMid ? 'amber' : 'green';
-  const label = isHigh ? 'Likely AI-generated' : isMid ? 'Possibly AI-assisted' : 'Likely human-written';
-
-  const barColor = { red: 'bg-red-400', amber: 'bg-amber-400', green: 'bg-green-400' }[color];
-  const bgColor = { red: 'bg-red-50 border-red-200', amber: 'bg-amber-50 border-amber-200', green: 'bg-green-50 border-green-200' }[color];
-  const textColor = { red: 'text-red-700', amber: 'text-amber-700', green: 'text-green-700' }[color];
-
-  return (
-    <div className={`rounded-lg border p-3 ${bgColor}`}>
-      <div className="flex items-center justify-between mb-1.5">
-        <p className={`text-xs font-semibold ${textColor}`}>AI Detection</p>
-        <span className={`text-xs font-bold ${textColor}`}>{likelihood}%</span>
-      </div>
-      <div className="bg-white/60 rounded-full h-1.5 mb-2">
-        <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${likelihood}%` }} />
-      </div>
-      <p className={`text-xs font-medium ${textColor} mb-1`}>{label}</p>
-      {reasoning && <p className={`text-xs ${textColor} opacity-80 leading-relaxed`}>{reasoning}</p>}
-    </div>
-  );
-}
-
-const assessmentStyle = {
-  weak: 'bg-red-100 text-red-600',
-  good: 'bg-amber-100 text-amber-600',
-  strong: 'bg-green-100 text-green-600',
-};
-
 function SaveIndicator({ status }) {
-  const map = { saved: ['Saved', 'text-green-500'], saving: ['Saving...', 'text-gray-400'], unsaved: ['Unsaved', 'text-amber-500'] };
+  const map = { saved: ['Saved', '#34C759'], saving: ['Saving...', 'var(--text-tertiary)'], unsaved: ['Unsaved', '#FF9F0A'] };
   const [text, color] = map[status];
-  return <span className={`text-xs ${color}`}>{text}</span>;
+  return <span className="text-xs" style={{ color }}>{text}</span>;
 }
 
 function Toolbar({ editor }) {
   if (!editor) return null;
   const btn = (action, label, active) => (
-    <button key={label} onMouseDown={(e) => { e.preventDefault(); action(); }}
-      className={`px-2 py-1 text-xs rounded font-medium transition-colors ${active ? 'bg-gray-200 text-gray-900' : 'text-gray-500 hover:bg-gray-100'}`}>
+    <button key={label} onMouseDown={e => { e.preventDefault(); action(); }}
+      className="px-2.5 py-1 text-xs rounded-lg font-medium transition-all"
+      style={active ? { background: 'var(--accent)', color: 'white' } : { color: 'var(--text-secondary)' }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = ''; }}>
       {label}
     </button>
   );
   return (
-    <div className="flex items-center gap-1 p-1 bg-gray-50 border border-gray-200 rounded-lg">
+    <div className="flex items-center gap-0.5 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
       {btn(() => editor.chain().focus().toggleBold().run(), 'B', editor.isActive('bold'))}
       {btn(() => editor.chain().focus().toggleItalic().run(), 'I', editor.isActive('italic'))}
       {btn(() => editor.chain().focus().toggleBulletList().run(), '• List', editor.isActive('bulletList'))}

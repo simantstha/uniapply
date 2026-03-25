@@ -1,39 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X } from 'lucide-react';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
-const STATUSES = ['not_started', 'in_progress', 'submitted', 'accepted', 'rejected', 'waitlisted'];
 
-const categoryStyle = {
-  dream: { border: 'border-violet-300', badge: 'bg-violet-100 text-violet-700', dot: 'bg-violet-400' },
-  target: { border: 'border-blue-300', badge: 'bg-blue-100 text-blue-700', dot: 'bg-blue-400' },
-  safety: { border: 'border-green-300', badge: 'bg-green-100 text-green-700', dot: 'bg-green-400' },
+const categoryConfig = {
+  dream: { color: '#BF5AF2', bg: 'rgba(191,90,242,0.08)', border: 'rgba(191,90,242,0.25)', label: 'Dream' },
+  target: { color: '#0071E3', bg: 'rgba(0,113,227,0.08)', border: 'rgba(0,113,227,0.25)', label: 'Target' },
+  safety: { color: '#34C759', bg: 'rgba(52,199,89,0.08)', border: 'rgba(52,199,89,0.25)', label: 'Safety' },
 };
 
-const statusLabel = {
-  not_started: 'Not Started',
-  in_progress: 'In Progress',
-  submitted: 'Submitted',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  waitlisted: 'Waitlisted',
+const statusConfig = {
+  not_started: { label: 'Not Started', color: 'var(--text-tertiary)', bg: 'var(--bg-secondary)' },
+  in_progress: { label: 'In Progress', color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
+  submitted: { label: 'Submitted', color: '#0071E3', bg: 'rgba(0,113,227,0.1)' },
+  accepted: { label: 'Accepted', color: '#34C759', bg: 'rgba(52,199,89,0.1)' },
+  rejected: { label: 'Rejected', color: '#FF3B30', bg: 'rgba(255,59,48,0.1)' },
+  waitlisted: { label: 'Waitlisted', color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
 };
 
-const statusStyle = {
-  not_started: 'bg-gray-100 text-gray-600',
-  in_progress: 'bg-yellow-100 text-yellow-700',
-  submitted: 'bg-blue-100 text-blue-700',
-  accepted: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-600',
-  waitlisted: 'bg-orange-100 text-orange-700',
-};
-
-const emptyForm = {
-  name: '', program: '', websiteUrl: '', category: 'target',
-  applicationDeadline: '', status: 'not_started', notes: '',
-};
+const emptyForm = { name: '', program: '', websiteUrl: '', category: 'target', applicationDeadline: '', status: 'not_started', notes: '' };
 
 export default function Universities() {
   const [universities, setUniversities] = useState([]);
@@ -44,15 +31,13 @@ export default function Universities() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const fetch = () => {
-    apiClient.get('/api/universities')
-      .then((res) => setUniversities(res.data))
-      .finally(() => setLoading(false));
+  const fetchData = () => {
+    apiClient.get('/api/universities').then(res => setUniversities(res.data)).finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  const set = field => e => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -65,7 +50,7 @@ export default function Universities() {
       await apiClient.post('/api/universities', payload);
       setShowModal(false);
       setForm(emptyForm);
-      fetch();
+      fetchData();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to add university');
     } finally {
@@ -74,147 +59,151 @@ export default function Universities() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this university?')) return;
+    if (!confirm('Delete this university and all its SOPs?')) return;
     await apiClient.delete(`/api/universities/${id}`);
-    fetch();
+    fetchData();
   };
 
   const filtered = filter === 'all' ? universities : universities.filter(u => u.category === filter);
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">Universities</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{universities.length} added</p>
+          <h1 className="text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Universities</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{universities.length} added</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          <Plus size={15} /> Add University
+        <button onClick={() => setShowModal(true)}
+          className="btn-primary flex items-center gap-2">
+          <Plus size={14} strokeWidth={2.5} /> Add University
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-6">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c}
-            onClick={() => setFilter(c)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${
-              filter === c ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
+      {/* Filter */}
+      <div className="flex items-center gap-1.5 mb-6 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-secondary)' }}>
+        {CATEGORIES.map(c => (
+          <button key={c} onClick={() => setFilter(c)}
+            className="px-3.5 py-1.5 rounded-lg text-xs font-medium capitalize transition-all"
+            style={filter === c
+              ? { background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
+              : { color: 'var(--text-secondary)' }}>
             {c}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Loading...</p>
+        <div className="flex items-center justify-center h-40">
+          <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'transparent' }} />
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-          <p className="text-gray-400 text-sm">No universities yet. Add one to get started.</p>
+        <div className="card p-12 text-center shadow-apple-sm">
+          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No universities yet. Add one to get started.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((u) => {
-            const cs = categoryStyle[u.category];
+          {filtered.map(u => {
+            const cat = categoryConfig[u.category];
+            const stat = statusConfig[u.status];
             return (
-              <div key={u.id} className={`bg-white rounded-xl border-2 ${cs.border} p-5 flex flex-col gap-3`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-sm">{u.name}</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">{u.program}</p>
+              <div key={u.id} className="card shadow-apple-sm hover:shadow-apple transition-all flex flex-col"
+                style={{ borderColor: cat.border }}>
+                <div className="p-5 flex-1">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</h3>
+                      <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{u.program}</p>
+                    </div>
+                    <button onClick={() => handleDelete(u.id)}
+                      className="flex-shrink-0 p-1 rounded-lg transition-colors opacity-40 hover:opacity-100"
+                      style={{ color: '#FF3B30' }}>
+                      <Trash2 size={13} />
+                    </button>
                   </div>
-                  <button onClick={() => handleDelete(u.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0">
-                    <Trash2 size={14} />
-                  </button>
+
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: cat.bg, color: cat.color }}>
+                      {cat.label}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: stat.bg, color: stat.color }}>
+                      {stat.label}
+                    </span>
+                  </div>
+
+                  {u.applicationDeadline && (
+                    <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                      <Calendar size={11} />
+                      {new Date(u.applicationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  )}
+
+                  {u.websiteUrl && (
+                    <a href={u.websiteUrl} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1 text-xs" style={{ color: 'var(--accent)' }}>
+                      <ExternalLink size={11} /> Visit website
+                    </a>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${cs.badge}`}>
-                    {u.category}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusStyle[u.status]}`}>
-                    {statusLabel[u.status]}
-                  </span>
+                <div className="px-5 pb-5">
+                  <Link to={`/sop/${u.id}`}
+                    className="btn-primary w-full flex items-center justify-center gap-2 py-2">
+                    <PenLine size={12} strokeWidth={2} /> Write SOP
+                  </Link>
                 </div>
-
-                {u.applicationDeadline && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                    <Calendar size={12} />
-                    {new Date(u.applicationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </div>
-                )}
-
-                {u.websiteUrl && (
-                  <a href={u.websiteUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-blue-500 hover:underline">
-                    <ExternalLink size={11} /> Visit website
-                  </a>
-                )}
-
-                <Link
-                  to={`/sop/${u.id}`}
-                  className="flex items-center gap-1.5 mt-1 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors w-full justify-center"
-                >
-                  <PenLine size={12} /> Write SOP
-                </Link>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Add University Modal */}
+      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="font-heading font-bold text-gray-900 mb-4">Add University</h2>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+          <div className="card shadow-apple-lg w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Add University</h2>
+              <button onClick={() => { setShowModal(false); setError(''); setForm(emptyForm); }}
+                className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                onMouseLeave={e => e.currentTarget.style.background = ''}>
+                <X size={15} />
+              </button>
+            </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg mb-4">
+              <div className="mb-4 px-3.5 py-2.5 rounded-xl text-xs" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.2)' }}>
                 {error}
               </div>
             )}
 
             <form onSubmit={handleAdd} className="space-y-3">
-              <ModalField label="University Name *" value={form.name} onChange={set('name')} required placeholder="e.g. MIT" />
-              <ModalField label="Program *" value={form.program} onChange={set('program')} required placeholder="e.g. MS Computer Science" />
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Category *</label>
-                <select value={form.category} onChange={set('category')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="dream">Dream</option>
-                  <option value="target">Target</option>
-                  <option value="safety">Safety</option>
-                </select>
+              <MField label="University Name *" value={form.name} onChange={set('name')} required placeholder="e.g. MIT" />
+              <MField label="Program *" value={form.program} onChange={set('program')} required placeholder="e.g. MS Computer Science" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Category *</label>
+                  <select value={form.category} onChange={set('category')} className="input">
+                    <option value="dream">Dream</option>
+                    <option value="target">Target</option>
+                    <option value="safety">Safety</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Deadline</label>
+                  <input type="date" value={form.applicationDeadline} onChange={set('applicationDeadline')} className="input" />
+                </div>
               </div>
-
+              <MField label="Website" value={form.websiteUrl} onChange={set('websiteUrl')} placeholder="https://..." />
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Application Deadline</label>
-                <input type="date" value={form.applicationDeadline} onChange={set('applicationDeadline')}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="label">Notes</label>
+                <textarea value={form.notes} onChange={set('notes')} rows={2} placeholder="Any notes..."
+                  className="input resize-none" />
               </div>
-
-              <ModalField label="Website URL" value={form.websiteUrl} onChange={set('websiteUrl')} placeholder="https://..." />
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-                <textarea value={form.notes} onChange={set('notes')} rows={2} placeholder="Any additional notes..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-              </div>
-
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => { setShowModal(false); setError(''); setForm(emptyForm); }}
-                  className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300">
-                  {saving ? 'Adding...' : 'Add University'}
-                </button>
+                <button type="button" onClick={() => { setShowModal(false); setError(''); setForm(emptyForm); }} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" disabled={saving} className="btn-primary flex-1">{saving ? 'Adding...' : 'Add'}</button>
               </div>
             </form>
           </div>
@@ -224,12 +213,11 @@ export default function Universities() {
   );
 }
 
-function ModalField({ label, value, onChange, placeholder, required }) {
+function MField({ label, value, onChange, placeholder, required }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
-      <input value={value} onChange={onChange} required={required} placeholder={placeholder}
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <label className="label">{label}</label>
+      <input value={value} onChange={onChange} required={required} placeholder={placeholder} className="input" />
     </div>
   );
 }

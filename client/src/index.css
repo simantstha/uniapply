@@ -1,11 +1,118 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-.prose p { margin-bottom: 0.75em; }
+@layer base {
+  :root {
+    --bg: #F5F5F7;
+    --bg-elevated: #FFFFFF;
+    --bg-secondary: #F5F5F7;
+    --text-primary: #1D1D1F;
+    --text-secondary: #6E6E73;
+    --text-tertiary: #AEAEB2;
+    --border: #D2D2D7;
+    --border-subtle: #E8E8ED;
+    --accent: #0071E3;
+    --accent-hover: #0077ED;
+  }
+
+  .dark {
+    --bg: #000000;
+    --bg-elevated: #1C1C1E;
+    --bg-secondary: #2C2C2E;
+    --text-primary: #F5F5F7;
+    --text-secondary: #8E8E93;
+    --text-tertiary: #636366;
+    --border: #3A3A3C;
+    --border-subtle: #2C2C2E;
+    --accent: #0A84FF;
+    --accent-hover: #409CFF;
+  }
+
+  * {
+    transition-property: background-color, border-color, color;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border;
+    background-color: var(--bg-elevated);
+    border-color: var(--border-subtle);
+  }
+
+  .card-dark {
+    @apply rounded-2xl border;
+    background-color: var(--bg-secondary);
+    border-color: var(--border);
+  }
+
+  .input {
+    @apply w-full px-3.5 py-2.5 rounded-xl text-sm border outline-none transition-all;
+    background-color: var(--bg-secondary);
+    border-color: var(--border);
+    color: var(--text-primary);
+  }
+
+  .input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+  }
+
+  .input::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-all active:scale-95;
+    background-color: var(--accent);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
+  }
+
+  .btn-primary:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95 border;
+    color: var(--text-primary);
+    border-color: var(--border);
+    background-color: var(--bg-elevated);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  .label {
+    @apply block text-xs font-medium mb-1.5;
+    color: var(--text-secondary);
+  }
+}
+
+/* TipTap */
+.prose p { margin-bottom: 0.75em; line-height: 1.7; }
 .prose ul { list-style: disc; padding-left: 1.25em; margin-bottom: 0.75em; }
 .prose ol { list-style: decimal; padding-left: 1.25em; margin-bottom: 0.75em; }
 .prose h2 { font-size: 1.1em; font-weight: 600; margin-bottom: 0.5em; }
-.ProseMirror { outline: none; }
+.ProseMirror { outline: none; color: var(--text-primary); }
