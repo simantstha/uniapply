@@ -248,6 +248,9 @@ export default function Universities() {
   );
 }
 
+// Session-level client cache — same query never hits the server twice
+const apiCache = new Map();
+
 function UniversityAutocomplete({ value, onChange, onSelect }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -259,32 +262,45 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
     const val = e.target.value;
     onChange(val);
 
-    // Show static results immediately
+    // Always show static results instantly (no network needed)
     const local = searchUniversities(val);
     setSuggestions(local);
     setOpen(local.length > 0);
 
-    // Fetch from College Scorecard API (6,800 schools) with debounce
     clearTimeout(debounceRef.current);
-    if (val.length >= 2) {
+
+    // Only hit the API when:
+    // 1. Query is 3+ chars (skip single/double chars)
+    // 2. Static list has fewer than 4 results (well-known schools like Harvard/MIT don't need API)
+    if (val.length >= 3 && local.length < 4) {
       debounceRef.current = setTimeout(async () => {
+        const cacheKey = val.toLowerCase().trim();
+
+        // Return cached result instantly, no network call
+        if (apiCache.has(cacheKey)) {
+          const cached = apiCache.get(cacheKey);
+          setSuggestions(cached);
+          setOpen(cached.length > 0);
+          return;
+        }
+
         setLoading(true);
         try {
           const res = await apiClient.get(`/api/college-search?q=${encodeURIComponent(val)}`);
-          // no_api_key → silently keep local results
           if (res.data?.error === 'no_api_key') return;
           const remote = res.data.map(r => ({ name: r.name, website: r.website, sub: r.city && r.state ? `${r.city}, ${r.state}` : '' }));
           const remoteNames = new Set(remote.map(r => r.name.toLowerCase()));
           const localOnly = local.filter(l => !remoteNames.has(l.name.toLowerCase()));
           const merged = [...remote, ...localOnly].slice(0, 10);
+          apiCache.set(cacheKey, merged);
           setSuggestions(merged);
           setOpen(merged.length > 0);
         } catch {
-          // Keep local results on API failure
+          // Keep local results on failure
         } finally {
           setLoading(false);
         }
-      }, 350);
+      }, 500);
     }
   };
 
