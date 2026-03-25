@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Loader2 } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search } from 'lucide-react';
+import { searchUniversities } from '../data/usUniversities';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
 
@@ -249,47 +250,23 @@ export default function Universities() {
 
 function UniversityAutocomplete({ value, onChange, onSelect }) {
   const [suggestions, setSuggestions] = useState([]);
-  const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
-  const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
-
-  const search = useCallback(async (query) => {
-    if (query.length < 2) { setSuggestions([]); setOpen(false); return; }
-    setSearching(true);
-    try {
-      const res = await fetch(
-        `https://universities.hipolabs.com/search?country=United+States&name=${encodeURIComponent(query)}`
-      );
-      const data = await res.json();
-      const results = data.slice(0, 8).map(u => ({
-        name: u.name,
-        websiteUrl: u.web_pages?.[0] || '',
-        domain: u.domains?.[0] || '',
-      }));
-      setSuggestions(results);
-      setOpen(results.length > 0);
-    } catch {
-      setSuggestions([]);
-    } finally {
-      setSearching(false);
-    }
-  }, []);
 
   const handleChange = (e) => {
     const val = e.target.value;
     onChange(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(val), 300);
+    const results = searchUniversities(val);
+    setSuggestions(results);
+    setOpen(results.length > 0);
   };
 
-  const handleSelect = (suggestion) => {
-    onSelect(suggestion);
+  const handleSelect = (s) => {
+    onSelect({ name: s.name, websiteUrl: s.website });
     setSuggestions([]);
     setOpen(false);
   };
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e) => { if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', handler);
@@ -307,14 +284,11 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
           onFocus={() => suggestions.length > 0 && setOpen(true)}
           required
           placeholder="Search US universities..."
-          className="input pl-8 pr-8"
+          className="input pl-8"
         />
-        {searching && (
-          <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" style={{ color: 'var(--text-tertiary)' }} />
-        )}
       </div>
 
-      {open && suggestions.length > 0 && (
+      {open && (
         <div className="absolute z-10 w-full mt-1 rounded-xl shadow-apple-lg overflow-hidden"
           style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
           {suggestions.map((s, i) => (
@@ -324,7 +298,7 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
               onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
               onMouseLeave={e => e.currentTarget.style.background = ''}>
               <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
-              {s.domain && <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{s.domain}</p>}
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{s.website.replace('https://', '')}</p>
             </button>
           ))}
         </div>
