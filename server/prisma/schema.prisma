@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  plan          String    @default("free")
+  planExpiresAt DateTime? @map("plan_expires_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  profile      Profile?
+  universities University[]
+  sops         SOP[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                       Int      @id @default(autoincrement())
+  userId                   Int      @unique @map("user_id")
+  gpa                      Float?
+  greVerbal                Int?     @map("gre_verbal")
+  greQuant                 Int?     @map("gre_quant")
+  greWriting               Float?   @map("gre_writing")
+  toeflScore               Int?     @map("toefl_score")
+  ieltsScore               Float?   @map("ielts_score")
+  undergraduateInstitution String?  @map("undergraduate_institution")
+  undergraduateMajor       String?  @map("undergraduate_major")
+  graduationYear           Int?     @map("graduation_year")
+  workExperienceYears      Int?     @map("work_experience_years")
+  fieldOfStudy             String?  @map("field_of_study")
+  careerGoals              String?  @map("career_goals")
+  researchInterests        String?  @map("research_interests")
+  extracurriculars         String?
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model University {
+  id                  Int       @id @default(autoincrement())
+  userId              Int       @map("user_id")
+  name                String
+  program             String
+  websiteUrl          String?   @map("website_url")
+  category            String
+  applicationDeadline DateTime? @map("application_deadline")
+  status              String    @default("not_started")
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sops SOP[]
+
+  @@map("universities")
+}
+
+model SOP {
+  id           Int       @id @default(autoincrement())
+  universityId Int       @map("university_id")
+  userId       Int       @map("user_id")
+  title        String
+  content      String
+  wordCount    Int       @default(0) @map("word_count")
+  status       String    @default("draft")
+  version      Int       @default(1)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  university University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  critiques  SOPCritique[]
+
+  @@map("sops")
+}
+
+model SOPCritique {
+  id                Int      @id @default(autoincrement())
+  sopId             Int      @map("sop_id")
+  overallAssessment String?  @map("overall_assessment")
+  authenticityScore Int?     @map("authenticity_score")
+  specificityScore  Int?     @map("specificity_score")
+  clarityScore      Int?     @map("clarity_score")
+  impactScore       Int?     @map("impact_score")
+  strengths         String?
+  weaknesses        String?
+  suggestions       String?
+  rawCritiqueText   String?  @map("raw_critique_text")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  sop SOP @relation(fields: [sopId], references: [id], onDelete: Cascade)
+
+  @@map("sop_critiques")
+}
