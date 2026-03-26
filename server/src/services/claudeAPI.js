@@ -10,7 +10,7 @@ export async function generateCritique(sop, profile, university) {
   const profileSection = profile ? `
 STUDENT PROFILE:
 - Applying for: ${degreeLevel.charAt(0).toUpperCase() + degreeLevel.slice(1)} level
-- GPA: ${profile.gpa || 'Not provided'}
+- GPA: ${profile.gpa != null ? (profile.gpaScale === 'percentage' ? `${profile.gpa}% (percentage scale)` : profile.gpaScale === 'cgpa_10' ? `${profile.gpa}/10 (CGPA)` : `${profile.gpa}/4.0`) : 'Not provided'}
 ${isUndergrad
   ? `- SAT: ${profile.satScore || 'Not provided'} | ACT: ${profile.actScore || 'Not provided'}`
   : `- GRE: V${profile.greVerbal || '?'} Q${profile.greQuant || '?'} W${profile.greWriting || '?'}`
@@ -19,7 +19,12 @@ ${isUndergrad
 - ${isUndergrad ? 'High School / Previous Institution' : 'Undergraduate Institution'}: ${profile.undergraduateInstitution || 'Not provided'}
 - ${isUndergrad ? 'Intended Major' : 'Major / Field'}: ${profile.undergraduateMajor || profile.fieldOfStudy || 'Not provided'}
 - Career Goals: ${profile.careerGoals || 'Not provided'}
-${!isUndergrad ? `- Work Experience: ${profile.workExperienceYears ? profile.workExperienceYears + ' years' : 'Not provided'}` : ''}
+${isUndergrad
+  ? `- Extracurricular Activities: ${profile.extracurriculars || 'Not provided'}`
+  : `- Work Experience: ${profile.workExperienceYears ? profile.workExperienceYears + ' years' : 'Not provided'}
+- Research Interests: ${profile.researchInterests || 'Not provided'}
+- Extracurricular Activities / Volunteering: ${profile.extracurriculars || 'Not provided'}`
+}
 `.trim() : 'STUDENT PROFILE: Not provided';
 
   const levelContext = isUndergrad
