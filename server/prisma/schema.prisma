@@ -12,14 +12,16 @@ model User {
   email         String    @unique
   passwordHash  String    @map("password_hash")
   name          String
-  plan          String    @default("free")
-  planExpiresAt DateTime? @map("plan_expires_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
+  plan                String    @default("free")
+  planExpiresAt       DateTime? @map("plan_expires_at")
+  onboardingCompleted Boolean   @default(false) @map("onboarding_completed")
+  createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   profile      Profile?
   universities University[]
   sops         SOP[]
+  documents    Document[]
 
   @@map("users")
 }
@@ -29,6 +31,7 @@ model Profile {
   userId                   Int      @unique @map("user_id")
   studyLevel               String?  @map("study_level") // 'undergraduate', 'masters', 'phd', 'other'
   gpa                      Float?
+  gpaScale                 String   @default("us_4") @map("gpa_scale")
   satScore                 Int?     @map("sat_score")
   actScore                 Int?     @map("act_score")
   greVerbal                Int?     @map("gre_verbal")
@@ -66,8 +69,9 @@ model University {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sops SOP[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sops         SOP[]
+  documentTags DocumentTag[]
 
   @@map("universities")
 }
@@ -91,6 +95,34 @@ model SOP {
   @@map("sops")
 }
 
+model Document {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String
+  docType      String   @map("doc_type") // 'transcript','test_scores','recommendation','resume','financial','passport','other'
+  fileName     String   @map("file_name")
+  fileSize     Int      @map("file_size")
+  mimeType     String   @map("mime_type")
+  filePath     String   @map("file_path")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags DocumentTag[]
+
+  @@map("documents")
+}
+
+model DocumentTag {
+  documentId   Int @map("document_id")
+  universityId Int @map("university_id")
+
+  document   Document   @relation(fields: [documentId],   references: [id], onDelete: Cascade)
+  university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, universityId])
+  @@map("document_tags")
+}
+
 model SOPCritique {
   id                Int      @id @default(autoincrement())
   sopId             Int      @map("sop_id")
@@ -110,4 +142,18 @@ model SOPCritique {
   sop SOP @relation(fields: [sopId], references: [id], onDelete: Cascade)
 
   @@map("sop_critiques")
+}
+
+model UniversityRequirements {
+  id              Int      @id @default(autoincrement())
+  universityName  String   @map("university_name")
+  program         String
+  matchedProgram  String?  @map("matched_program")
+  requirementsJson String  @map("requirements_json")
+  sourceUrl       String?  @map("source_url")
+  sourceType      String   @default("ai_knowledge") @map("source_type")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([universityName, program])
+  @@map("university_requirements")
 }
