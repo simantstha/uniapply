@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth.js';
+import { generateDraft } from '../services/claudeAPI.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -100,6 +101,24 @@ router.patch('/:id/final', async (req, res) => {
     });
     const updated = await prisma.sOP.update({ where: { id: sop.id }, data: { status: 'final' } });
     res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generate AI draft for a SOP
+router.post('/:id/generate', async (req, res) => {
+  try {
+    const sop = await prisma.sOP.findFirst({
+      where: { id: parseInt(req.params.id), userId: req.userId },
+      include: { university: true },
+    });
+    if (!sop) return res.status(404).json({ error: 'Not found' });
+
+    const profile = await prisma.profile.findUnique({ where: { userId: req.userId } });
+
+    const draft = await generateDraft(sop, profile, sop.university);
+    res.json({ draft });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

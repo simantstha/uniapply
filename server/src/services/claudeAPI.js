@@ -2,6 +2,41 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+export async function generateDraft(sop, profile, university) {
+  const degreeLevel = university.degreeLevel || 'masters';
+
+  const prompt = `You are helping a student write a Statement of Purpose for graduate/undergraduate admission.
+
+Student Profile:
+- Field of study: ${profile?.fieldOfStudy || 'Not provided'}
+- Career goals: ${profile?.careerGoals || 'Not provided'}
+- GPA: ${profile?.gpa != null ? `${profile.gpa} (${profile.gpaScale})` : 'Not provided'}
+- Test scores: TOEFL ${profile?.toeflScore || 'Not provided'}, IELTS ${profile?.ieltsScore || 'Not provided'}
+- Extracurriculars: ${profile?.extracurriculars || 'Not provided'}
+- Research interests: ${profile?.researchInterests || 'Not provided'}
+
+Target University: ${university.name}
+Degree level: ${degreeLevel}
+
+Write a compelling, authentic 500-700 word Statement of Purpose for this student applying to ${university.name}.
+Structure it with:
+1. A strong opening hook (2-3 sentences)
+2. Academic background and relevant experience (1-2 paragraphs)
+3. Why this specific program/university (1 paragraph)
+4. Career goals and how this degree helps (1 paragraph)
+5. A memorable closing (2-3 sentences)
+
+Write in first person. Be specific, not generic. Avoid clichés like "from a young age" or "passionate about". Return only the SOP text, no preamble.`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1500,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return message.content[0].text;
+}
+
 export async function generateCritique(sop, profile, university) {
   const degreeLevel = university.degreeLevel || 'masters';
   const isUndergrad = degreeLevel === 'undergraduate';

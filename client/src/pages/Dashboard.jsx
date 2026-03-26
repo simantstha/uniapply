@@ -86,6 +86,7 @@ function getJourneySteps(data) {
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [showAllSteps, setShowAllSteps] = useState(false);
 
   useEffect(() => {
     apiClient.get('/api/dashboard/stats').then(res => setData(res.data)).catch(() => {});
@@ -145,72 +146,86 @@ export default function Dashboard() {
             </span>
           </div>
           {/* Progress bar */}
-          <div className="rounded-full h-2" style={{ background: 'var(--border)' }}>
+          <div className="rounded-full h-2 cursor-pointer" style={{ background: 'var(--border)' }}
+            onClick={() => setShowAllSteps(s => !s)}>
             <div className="h-2 rounded-full transition-all duration-500"
               style={{
                 width: `${(completedSteps / 5) * 100}%`,
                 background: completedSteps === 5 ? '#34C759' : 'linear-gradient(90deg, var(--accent), var(--gold))',
               }} />
           </div>
+          <p className="text-xs mt-1.5 cursor-pointer select-none" style={{ color: 'var(--text-tertiary)' }}
+            onClick={() => setShowAllSteps(s => !s)}>
+            {completedSteps}/5 complete · click to {showAllSteps ? 'hide' : 'see all'}
+          </p>
         </div>
 
         {/* Steps */}
-        <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
-          {journeySteps.map((step, i) => {
-            const Icon = step.icon;
-            const isNext = nextStep?.num === step.num;
-            return (
-              <div key={step.num}
-                className="px-5 py-3.5 flex items-center gap-3 transition-all"
-                style={{ background: isNext ? `rgba(0,113,227,0.03)` : 'transparent' }}>
-                {/* Status icon */}
-                <div className="flex-shrink-0">
-                  {step.done ? (
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: '#34C759' }}>
-                      <Check size={12} color="white" strokeWidth={3} />
-                    </div>
-                  ) : step.partial ? (
-                    <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: step.color }}>
-                      <div className="w-2 h-2 rounded-full" style={{ background: step.color }} />
-                    </div>
-                  ) : (
-                    <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--border)' }}>
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{step.num}</span>
-                    </div>
+        {completedSteps === 5 && !showAllSteps ? (
+          <div className="px-5 py-6 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(52,199,89,0.12)' }}>
+              <Check size={16} color="#34C759" strokeWidth={3} />
+            </div>
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>All done — you're ready to apply!</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Click the progress bar above to review completed steps.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {(showAllSteps ? journeySteps : journeySteps.filter(s => !s.done)).map((step) => {
+              const Icon = step.icon;
+              const isNext = nextStep?.num === step.num;
+              return (
+                <div key={step.num}
+                  className="px-5 py-3.5 flex items-center gap-3 transition-all"
+                  style={{ background: isNext ? `rgba(0,113,227,0.03)` : 'transparent', opacity: step.done ? 0.6 : 1 }}>
+                  {/* Status icon */}
+                  <div className="flex-shrink-0">
+                    {step.done ? (
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: '#34C759' }}>
+                        <Check size={12} color="white" strokeWidth={3} />
+                      </div>
+                    ) : step.partial ? (
+                      <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: step.color }}>
+                        <div className="w-2 h-2 rounded-full" style={{ background: step.color }} />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--border)' }}>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{step.num}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Icon */}
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: step.done ? 'rgba(52,199,89,0.1)' : `${step.color}14` }}>
+                    <Icon size={14} style={{ color: step.done ? '#34C759' : step.color }} strokeWidth={1.8} />
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: step.done ? 'var(--text-secondary)' : 'var(--text-primary)' }}>
+                      {step.title}
+                    </p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{step.desc}</p>
+                  </div>
+
+                  {/* CTA */}
+                  {!step.done && (
+                    <Link to={step.to}
+                      className="flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all"
+                      style={isNext
+                        ? { background: 'var(--accent)', color: 'white' }
+                        : { color: 'var(--text-tertiary)', background: 'var(--bg-secondary)' }}>
+                      {isNext ? step.cta : <ChevronRight size={13} />}
+                    </Link>
                   )}
                 </div>
-
-                {/* Icon */}
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: step.done ? 'rgba(52,199,89,0.1)' : `${step.color}14` }}>
-                  <Icon size={14} style={{ color: step.done ? '#34C759' : step.color }} strokeWidth={1.8} />
-                </div>
-
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium" style={{
-                    color: step.done ? 'var(--text-secondary)' : 'var(--text-primary)',
-                    textDecoration: step.done ? 'line-through' : 'none',
-                  }}>
-                    {step.title}
-                  </p>
-                  <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{step.desc}</p>
-                </div>
-
-                {/* CTA */}
-                {!step.done && (
-                  <Link to={step.to}
-                    className="flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all"
-                    style={isNext
-                      ? { background: 'var(--accent)', color: 'white' }
-                      : { color: 'var(--text-tertiary)', background: 'var(--bg-secondary)' }}>
-                    {isNext ? step.cta : <ChevronRight size={13} />}
-                  </Link>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Stats */}

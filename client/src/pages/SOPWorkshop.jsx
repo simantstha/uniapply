@@ -72,6 +72,8 @@ export default function SOPWorkshop() {
   const [critiqueError, setCritiqueError] = useState('');
   const [activeTab, setActiveTab] = useState('guide'); // 'guide' | 'critique'
   const [mobileTab, setMobileTab] = useState('editor');
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [draftError, setDraftError] = useState('');
   const saveTimer = useRef(null);
   const sopIdRef = useRef(null);
 
@@ -153,6 +155,21 @@ export default function SOPWorkshop() {
     } catch (err) {
       setCritiqueError(err.response?.data?.error || 'Failed to generate critique');
     } finally { setCritiquing(false); }
+  };
+
+  const handleGenerateDraft = async () => {
+    if (!sopIdRef.current || !editor) return;
+    setGeneratingDraft(true);
+    setDraftError('');
+    try {
+      const res = await apiClient.post(`/api/sops/${sopIdRef.current}/generate`);
+      editor.commands.setContent(res.data.draft);
+      await autoSave(editor.getHTML());
+    } catch (err) {
+      setDraftError(err.response?.data?.error || 'Failed to generate draft');
+    } finally {
+      setGeneratingDraft(false);
+    }
   };
 
   const degreeLevel = university?.degreeLevel || 'masters';
@@ -261,7 +278,50 @@ export default function SOPWorkshop() {
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
                   </div>
                 ) : (
-                  <EditorContent editor={editor} />
+                  <div className="relative">
+                    <EditorContent editor={editor} />
+                    {wordCount < 50 && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="pointer-events-auto flex flex-col items-center gap-3 px-6 py-5 rounded-2xl shadow-apple text-center"
+                          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', maxWidth: 320 }}>
+                          <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                            style={{ background: 'rgba(0,113,227,0.1)' }}>
+                            <Sparkles size={20} style={{ color: 'var(--accent)' }} strokeWidth={1.6} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Start with an AI draft</p>
+                            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                              Generate a personalised first draft based on your profile, then edit it to make it yours.
+                            </p>
+                          </div>
+                          {draftError && (
+                            <p className="text-xs px-3 py-2 rounded-xl w-full text-left"
+                              style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>
+                              {draftError}
+                            </p>
+                          )}
+                          <button
+                            onClick={handleGenerateDraft}
+                            disabled={generatingDraft}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all active:scale-95"
+                            style={{ background: generatingDraft ? 'rgba(0,113,227,0.5)' : 'var(--accent)', cursor: generatingDraft ? 'not-allowed' : 'pointer' }}>
+                            {generatingDraft ? (
+                              <>
+                                <div className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'white', borderTopColor: 'transparent' }} />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles size={14} strokeWidth={2} />
+                                Generate first draft with AI
+                              </>
+                            )}
+                          </button>
+                          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Or just start typing above</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
