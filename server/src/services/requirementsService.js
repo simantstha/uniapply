@@ -125,7 +125,7 @@ Return ONLY valid JSON in this exact shape:
 async function fetchScorecardStats(universityName) {
   try {
     const encoded = encodeURIComponent(universityName);
-    const url = `https://api.data.gov/ed/collegescorecard/v1/schools.json?school.name=${encoded}&fields=school.name,latest.admissions.admission_rate.overall,latest.admissions.sat_scores.midpoint.critical_reading,latest.admissions.sat_scores.midpoint.math,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state&api_key=DEMO_KEY&per_page=1`;
+    const url = `https://api.data.gov/ed/collegescorecard/v1/schools.json?school.name=${encoded}&fields=school.name,latest.admissions.admission_rate.overall,latest.admissions.sat_scores.midpoint.critical_reading,latest.admissions.sat_scores.midpoint.math,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state&api_key=${process.env.COLLEGE_SCORECARD_API_KEY || 'DEMO_KEY'}&per_page=1`;
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (!res.ok) return null;
     const data = await res.json();
