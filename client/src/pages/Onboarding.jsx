@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
-import { GraduationCap, BookOpen, FlaskConical, ChevronRight, ChevronLeft, Check, Sparkles } from 'lucide-react';
+import { GraduationCap, BookOpen, FlaskConical, ChevronRight, ChevronLeft, Check, Sparkles, Star, Target, Shield } from 'lucide-react';
 
 const GPA_SCALES = {
   us_4:       { min: 0, max: 4.0,  label: '0–4.0', placeholder: '3.7' },
@@ -103,6 +103,12 @@ export default function Onboarding() {
   const [gre, setGre] = useState('');
   const [scoreErrors, setScoreErrors] = useState({});
 
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState(null);
+  const [selectedSchools, setSelectedSchools] = useState(new Set());
+  const [addingSchools, setAddingSchools] = useState(false);
+
   const handleGpaScaleChange = scale => {
     setGpaScaleState(scale);
     setGpa('');
@@ -129,7 +135,8 @@ export default function Onboarding() {
 
   // Guards (after all hooks)
   if (!loading && !user) { navigate('/login', { replace: true }); return null; }
-  if (!loading && user?.onboardingCompleted) { navigate('/dashboard', { replace: true }); return null; }
+  // Allow step 5 (university suggestions) even after onboarding is marked complete
+  if (!loading && user?.onboardingCompleted && step < 5) { navigate('/dashboard', { replace: true }); return null; }
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
       <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
@@ -161,15 +168,69 @@ export default function Onboarding() {
 
       await apiClient.put('/api/profile', profileData);
       await completeOnboarding();
-      navigate('/dashboard');
+      // Go to step 5 for university suggestions
+      setStep(5);
+      fetchSuggestions();
     } catch (err) {
       console.error(err);
       // still finish even if save fails
       await completeOnboarding();
-      navigate('/dashboard');
+      setStep(5);
+      fetchSuggestions();
     } finally {
       setSaving(false);
     }
+  };
+
+  const fetchSuggestions = async () => {
+    setSuggestionsLoading(true);
+    setSuggestionsError(null);
+    try {
+      const res = await apiClient.post('/api/onboarding/suggest-universities');
+      setSuggestions(res.data.suggestions || []);
+    } catch (err) {
+      console.error(err);
+      setSuggestionsError('Couldn\'t load suggestions.');
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
+  const toggleSchool = (idx) => {
+    setSelectedSchools(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const handleAddSchools = async () => {
+    setAddingSchools(true);
+    try {
+      const selected = suggestions.filter((_, idx) => selectedSchools.has(idx));
+      for (const school of selected) {
+        const category = school.tier === 'dream' ? 'Dream' : school.tier === 'target' ? 'Target' : 'Safety';
+        await apiClient.post('/api/universities', {
+          name: school.name,
+          program: school.program,
+          category,
+          degreeLevel: studyLevel || 'masters',
+          status: 'not_started',
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAddingSchools(false);
+      navigate('/dashboard');
+    }
+  };
+
+  const TIER_CONFIG = {
+    dream:  { label: 'Dream',  color: '#BF5AF2', bg: 'rgba(191,90,242,0.06)',  border: 'rgba(191,90,242,0.35)', Icon: Star },
+    target: { label: 'Target', color: '#0071E3', bg: 'rgba(0,113,227,0.06)',   border: 'rgba(0,113,227,0.35)',  Icon: Target },
+    safety: { label: 'Safety', color: '#34C759', bg: 'rgba(52,199,89,0.06)',   border: 'rgba(52,199,89,0.35)',  Icon: Shield },
   };
 
   return (
@@ -401,46 +462,160 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className={`flex gap-2 mt-6 ${step === 1 ? 'justify-end' : 'justify-between'}`}>
-          {step > 1 && step < 4 && (
-            <button onClick={() => setStep(s => s - 1)}
-              className="btn-secondary flex items-center gap-1.5">
-              <ChevronLeft size={14} /> Back
-            </button>
-          )}
+        {/* Step 5: University Suggestions */}
+        {step === 5 && (
+          <div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 mx-auto"
+              style={{ background: 'rgba(191,90,242,0.1)' }}>
+              <Sparkles size={22} style={{ color: '#BF5AF2' }} />
+            </div>
+            <h2 className="text-xl font-semibold text-center mb-1" style={{ color: 'var(--text-primary)' }}>
+              Let's find your schools
+            </h2>
+            <p className="text-sm text-center mb-6" style={{ color: 'var(--text-secondary)' }}>
+              Based on your profile, here are some universities to consider.
+            </p>
 
-          {step < 3 && (
-            <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
-              className="btn-primary flex items-center gap-1.5 ml-auto"
-              style={!canNext() ? { opacity: 0.4, cursor: 'not-allowed' } : {}}>
-              Continue <ChevronRight size={14} />
-            </button>
-          )}
+            {suggestionsLoading && (
+              <div className="flex flex-col items-center justify-center py-10 gap-3">
+                <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+                  style={{ borderColor: 'var(--border)', borderTopColor: '#BF5AF2' }} />
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Finding the best programs for you...
+                </p>
+              </div>
+            )}
 
-          {step === 3 && (
-            <button onClick={() => setStep(4)}
-              className="btn-primary flex items-center gap-1.5 ml-auto">
-              See my plan <ChevronRight size={14} />
-            </button>
-          )}
+            {!suggestionsLoading && suggestionsError && (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <p className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
+                  Couldn't load suggestions. You can add universities manually from your dashboard.
+                </p>
+                <button onClick={() => navigate('/dashboard')} className="btn-primary">
+                  Go to Dashboard
+                </button>
+              </div>
+            )}
 
-          {step === 4 && (
-            <button onClick={handleFinish} disabled={saving}
-              className="btn-primary w-full flex items-center justify-center gap-2 py-3">
-              {saving ? 'Saving...' : 'Start my journey →'}
-            </button>
-          )}
-        </div>
+            {!suggestionsLoading && !suggestionsError && suggestions.length > 0 && (
+              <div className="space-y-5">
+                {['dream', 'target', 'safety'].map(tier => {
+                  const { label, color, bg, border, Icon } = TIER_CONFIG[tier];
+                  const tierSchools = suggestions.filter(s => s.tier === tier);
+                  return (
+                    <div key={tier}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon size={14} style={{ color }} strokeWidth={2} />
+                        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color }}>
+                          {label}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {tierSchools.map((school, i) => {
+                          const idx = suggestions.indexOf(school);
+                          const isSelected = selectedSchools.has(idx);
+                          return (
+                            <button key={i} type="button" onClick={() => toggleSchool(idx)}
+                              className="w-full text-left p-3 rounded-xl border-2 transition-all relative"
+                              style={{
+                                borderColor: isSelected ? color : 'var(--border)',
+                                background: isSelected ? bg : 'var(--bg-secondary)',
+                              }}>
+                              <div className="pr-7">
+                                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                  {school.name}
+                                </p>
+                                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                                  {school.program}
+                                </p>
+                                <p className="text-xs italic mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                                  {school.reason}
+                                </p>
+                                <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
+                                  style={{ background: isSelected ? border : 'var(--border)', color: isSelected ? color : 'var(--text-tertiary)' }}>
+                                  {school.country}
+                                </span>
+                              </div>
+                              <div className="absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                                style={{
+                                  borderColor: isSelected ? color : 'var(--border)',
+                                  background: isSelected ? color : 'transparent',
+                                }}>
+                                {isSelected && <Check size={10} color="white" strokeWidth={3} />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
 
-        {/* Skip link */}
-        {step < 4 && (
-          <div className="text-center mt-4">
-            <button onClick={async () => { await completeOnboarding(); navigate('/dashboard'); }}
-              className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              Skip for now
-            </button>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => navigate('/dashboard')}
+                    className="btn-secondary text-sm flex-shrink-0"
+                    style={{ color: 'var(--text-tertiary)' }}>
+                    Skip, I'll add manually
+                  </button>
+                  <button
+                    onClick={handleAddSchools}
+                    disabled={selectedSchools.size === 0 || addingSchools}
+                    className="btn-primary flex-1 flex items-center justify-center gap-1.5"
+                    style={selectedSchools.size === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}>
+                    {addingSchools
+                      ? 'Adding...'
+                      : `Add ${selectedSchools.size > 0 ? selectedSchools.size : ''} selected school${selectedSchools.size !== 1 ? 's' : ''} →`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* Navigation — hidden on step 5 which has its own action bar */}
+        {step < 5 && (
+          <>
+            <div className={`flex gap-2 mt-6 ${step === 1 ? 'justify-end' : 'justify-between'}`}>
+              {step > 1 && step < 4 && (
+                <button onClick={() => setStep(s => s - 1)}
+                  className="btn-secondary flex items-center gap-1.5">
+                  <ChevronLeft size={14} /> Back
+                </button>
+              )}
+
+              {step < 3 && (
+                <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
+                  className="btn-primary flex items-center gap-1.5 ml-auto"
+                  style={!canNext() ? { opacity: 0.4, cursor: 'not-allowed' } : {}}>
+                  Continue <ChevronRight size={14} />
+                </button>
+              )}
+
+              {step === 3 && (
+                <button onClick={() => setStep(4)}
+                  className="btn-primary flex items-center gap-1.5 ml-auto">
+                  See my plan <ChevronRight size={14} />
+                </button>
+              )}
+
+              {step === 4 && (
+                <button onClick={handleFinish} disabled={saving}
+                  className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+                  {saving ? 'Saving...' : 'Start my journey →'}
+                </button>
+              )}
+            </div>
+
+            {/* Skip link */}
+            {step < 4 && (
+              <div className="text-center mt-4">
+                <button onClick={async () => { await completeOnboarding(); navigate('/dashboard'); }}
+                  className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  Skip for now
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

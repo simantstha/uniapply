@@ -37,6 +37,51 @@ Write in first person. Be specific, not generic. Avoid clichés like "from a you
   return message.content[0].text;
 }
 
+export async function suggestUniversities(profile, degreeLevel) {
+  const prompt = `You are a university admissions advisor helping a student find the right schools.
+
+Student Profile:
+- Degree level: ${degreeLevel}
+- Field of study: ${profile.fieldOfStudy || 'not specified'}
+- Career goals: ${profile.careerGoals || 'not specified'}
+- GPA: ${profile.gpa ? `${profile.gpa} (${profile.gpaScale})` : 'not specified'}
+- TOEFL: ${profile.toeflScore || 'not specified'}
+- IELTS: ${profile.ieltsScore || 'not specified'}
+- Research interests: ${profile.researchInterests || 'not specified'}
+
+Suggest exactly 9 universities: 3 Dream schools, 3 Target schools, and 3 Safety schools.
+
+Rules:
+- Dream: prestigious programs where admission is competitive given the profile
+- Target: strong programs where the student has a realistic shot
+- Safety: solid programs where the student is likely to get in
+- Vary by country (US, UK, Canada, Australia, Europe) when appropriate
+- Match the specific field of study and degree level
+- Be specific about the PROGRAM name, not just the university
+
+Return ONLY a JSON array with exactly 9 objects, no explanation:
+[
+  {
+    "name": "Massachusetts Institute of Technology",
+    "program": "MS Computer Science",
+    "country": "USA",
+    "tier": "dream",
+    "reason": "One sentence on why this fits the student's goals"
+  }
+]`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1500,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = message.content[0].text;
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error('Invalid response from Claude API');
+  return JSON.parse(jsonMatch[0]);
+}
+
 export async function generateCritique(sop, profile, university) {
   const degreeLevel = university.degreeLevel || 'masters';
   const isUndergrad = degreeLevel === 'undergraduate';

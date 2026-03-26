@@ -12,6 +12,7 @@ import documentsRoutes from './routes/documents.js';
 import requirementsRoutes from './routes/requirements.js';
 import lorsRoutes from './routes/lors.js';
 import reviewRoutes from './routes/review.js';
+import onboardingRoutes from './routes/onboarding.js';
 import { startDeadlineReminders } from './jobs/deadlineReminders.js';
 
 dotenv.config();
@@ -37,6 +38,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/college-search', collegeSearchRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/lors', lorsRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
