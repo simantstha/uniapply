@@ -69,7 +69,7 @@ export default function Compare() {
           ));
         });
     });
-  }, []);
+  }, [searchParams]);
 
   if (!ids.length) {
     return (
@@ -188,10 +188,15 @@ export default function Compare() {
       render: (col) => {
         if (col.loading) return <Cell loading />;
         const ds = col.req?.doc_status?.recommendation;
-        if (!ds) return <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
-        return <span className="text-sm" style={{ color: ds.met ? '#16A34A' : ds.partial ? '#D4A843' : 'var(--text-tertiary)' }}>
-          {ds.count}/{ds.required}
-        </span>;
+        if (!ds) return <Dot completion={null} />;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <Dot completion={ds} />
+            {ds && !ds.met && (
+              <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{ds.count}/{ds.required}</span>
+            )}
+          </div>
+        );
       },
     },
     {
