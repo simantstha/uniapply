@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
+import { getUpcomingMilestones } from './Timeline';
 import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
   CheckCircle, Clock, User, ChevronRight,
-  PenLine, FolderOpen, Check, Circle,
+  PenLine, FolderOpen, Check, Circle, CalendarClock,
 } from 'lucide-react';
 
 const statusConfig = {
@@ -87,6 +88,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [showAllSteps, setShowAllSteps] = useState(false);
+  const [upcomingMilestones] = useState(() => getUpcomingMilestones(3));
 
   useEffect(() => {
     apiClient.get('/api/dashboard/stats').then(res => setData(res.data)).catch(() => {});
@@ -220,6 +222,61 @@ export default function Dashboard() {
                         : { color: 'var(--text-tertiary)', background: 'var(--bg-secondary)' }}>
                       {isNext ? step.cta : <ChevronRight size={13} />}
                     </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Timeline widget */}
+      <div className="card shadow-apple-sm overflow-hidden">
+        <div className="px-5 pt-5 pb-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div className="flex items-center gap-2">
+            <CalendarClock size={14} style={{ color: 'var(--text-secondary)' }} strokeWidth={1.8} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Your Timeline</p>
+          </div>
+          <Link to="/timeline" className="text-xs font-medium flex items-center gap-0.5" style={{ color: 'var(--accent)' }}>
+            View full timeline <ChevronRight size={12} />
+          </Link>
+        </div>
+
+        {upcomingMilestones === null ? (
+          <div className="px-5 py-5 flex flex-col gap-3">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Set your target enrollment date to see your application timeline.
+            </p>
+            <Link to="/timeline"
+              className="btn-primary text-xs py-2 px-3 inline-flex items-center gap-1.5 self-start">
+              <CalendarClock size={11} /> Set enrollment date
+            </Link>
+          </div>
+        ) : upcomingMilestones.length === 0 ? (
+          <div className="px-5 py-5">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              No upcoming milestones — check your full timeline for overdue items.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {upcomingMilestones.map(m => {
+              const isDueSoon = m.status === 'due-soon';
+              const dotColor  = isDueSoon ? '#D4A843' : 'var(--text-tertiary)';
+              return (
+                <div key={m.id} className="px-5 py-3.5 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0 mt-0.5" style={{ background: dotColor }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{m.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                      {m.date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  {isDueSoon && (
+                    <span className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(212,168,67,0.12)', color: '#D4A843' }}>
+                      Due soon
+                    </span>
                   )}
                 </div>
               );

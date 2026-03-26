@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth.js';
+import { generateLorRequestEmail } from '../services/claudeAPI.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -142,6 +143,59 @@ router.patch('/:id', async (req, res) => {
     }
 
     res.json({ ...updated, universities });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Draft a request email for a LOR
+router.post('/:id/draft-email', async (req, res) => {
+  try {
+    const userId = req.userId;
+    const lor = await prisma.letterOfRecommendation.findFirst({
+      where: { id: parseInt(req.params.id), userId },
+    });
+    if (!lor) return res.status(404).json({ error: 'Not found' });
+
+    const [profile, user] = await Promise.all([
+      prisma.profile.findUnique({ where: { userId } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    ]);
+
+    // Resolve university names from universityIds JSON array
+    let universityNames = [];
+    if (lor.universityIds) {
+      try {
+        const ids = JSON.parse(lor.universityIds);
+        if (Array.isArray(ids) && ids.length > 0) {
+          const unis = await prisma.university.findMany({
+            where: { id: { in: ids }, userId },
+            select: { name: true },
+          });
+          universityNames = unis.map((u) => u.name);
+        }
+      } catch {
+        // malformed JSON — leave empty
+      }
+    }
+
+    const deadlineStr = lor.deadline
+      ? new Date(lor.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      : null;
+
+    const email = await generateLorRequestEmail({
+      studentName: user?.name || 'Student',
+      recommenderName: lor.recommenderName,
+      recommenderEmail: lor.recommenderEmail,
+      relationship: lor.relationship,
+      universities: universityNames,
+      deadline: deadlineStr,
+      fieldOfStudy: profile?.fieldOfStudy,
+      careerGoals: profile?.careerGoals,
+      programLevel: profile?.studyLevel,
+    });
+
+    res.json({ email });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

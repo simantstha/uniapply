@@ -4,6 +4,14 @@ import apiClient from '../api/client';
 import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 
+const PHD_BANNER_KEY = 'uniapply_phd_banner_dismissed';
+
+const fundingConfig = {
+  funded:      { label: 'Typically Funded',  bg: 'rgba(52,199,89,0.1)',   color: '#34C759' },
+  self_funded: { label: 'Self-Funded',        bg: 'rgba(255,59,48,0.08)', color: '#FF3B30' },
+  partial:     { label: 'Partial Funding',    bg: 'rgba(212,168,67,0.12)', color: '#D4A843' },
+};
+
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
 
 const fitConfig = {
@@ -38,7 +46,7 @@ const statusConfig = {
 
 const emptyForm = {
   name: '', program: '', degreeLevel: 'masters', websiteUrl: '',
-  category: 'target', applicationDeadline: '', status: 'not_started', notes: '',
+  category: 'target', applicationDeadline: '', status: 'not_started', notes: '', fundingType: 'unknown',
 };
 
 export default function Universities() {
@@ -57,6 +65,7 @@ export default function Universities() {
   const [editError, setEditError] = useState('');
   const [deletingId, setDeletingId] = useState(null);
   const [fitScores, setFitScores] = useState({});
+  const [bannerDismissed, setBannerDismissed] = useState(() => localStorage.getItem(PHD_BANNER_KEY) === 'true');
 
   const fetchData = () => {
     apiClient.get('/api/universities').then(res => setUniversities(res.data)).finally(() => setLoading(false));
@@ -100,6 +109,7 @@ export default function Universities() {
         : '',
       status: u.status,
       notes: u.notes || '',
+      fundingType: u.fundingType || 'unknown',
     });
     setEditError('');
   };
@@ -143,6 +153,12 @@ export default function Universities() {
 
   const closeModal = () => { setShowModal(false); setError(''); setForm(emptyForm); };
 
+  const dismissBanner = () => {
+    localStorage.setItem(PHD_BANNER_KEY, 'true');
+    setBannerDismissed(true);
+  };
+
+  const hasPhdUniversity = universities.some(u => u.degreeLevel === 'phd');
   const filtered = filter === 'all' ? universities : universities.filter(u => u.category === filter);
 
   return (
@@ -159,6 +175,24 @@ export default function Universities() {
           <span className="sm:hidden">Add</span>
         </button>
       </div>
+
+      {/* PhD Funding Awareness Banner */}
+      {hasPhdUniversity && !bannerDismissed && (
+        <div className="flex items-start justify-between gap-3 mb-5 px-4 py-3 rounded-xl"
+          style={{ background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.3)' }}>
+          <p className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>
+            <span className="mr-1">💡</span>
+            <strong>Did you know?</strong> PhD programs in the US are typically fully funded — tuition covered + monthly stipend through Teaching/Research Assistantships. You may not need to self-fund your PhD.{' '}
+            <Link to="/timeline" className="underline font-medium" style={{ color: '#D4A843' }}>Learn more</Link>
+          </p>
+          <button onClick={dismissBanner} className="flex-shrink-0 p-0.5 rounded-md transition-colors"
+            style={{ color: '#D4A843' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,168,67,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background = ''}>
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {/* Filter */}
       <div className="flex items-center gap-1.5 mb-5 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-secondary)' }}>
@@ -189,6 +223,18 @@ export default function Universities() {
             const dl = degreeLevelConfig[u.degreeLevel] || degreeLevelConfig.masters;
             const fitKey = fitScores[u.id] || 'unknown';
             const fit = fitConfig[fitKey] || fitConfig.unknown;
+            // Determine displayed funding type for badge
+            const displayFundingType = (u.fundingType === 'unknown' && u.degreeLevel === 'phd')
+              ? 'funded'
+              : (u.fundingType !== 'unknown' ? u.fundingType : null);
+            const fundingBadge = displayFundingType ? fundingConfig[displayFundingType] : null;
+            // Only show badge: funded (for phd), self_funded (user-set), partial (user-set)
+            // Hide if unknown masters/undergrad
+            const showFundingBadge = !!fundingBadge && (
+              displayFundingType === 'funded' ||
+              (displayFundingType === 'self_funded' && !u.fundingSuggested) ||
+              (displayFundingType === 'partial' && !u.fundingSuggested)
+            );
             return (
               <div key={u.id} className="card shadow-apple-sm hover:shadow-apple transition-all flex flex-col overflow-hidden">
                   <div className="h-1 w-full flex-shrink-0" style={{ background: cat.border }} />
@@ -200,6 +246,14 @@ export default function Universities() {
                         {fitKey !== 'unknown' && (
                           <span className="inline-block mt-1.5 text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: fit.bg, color: fit.color }}>
                             {fit.label}
+                          </span>
+                        )}
+                        {showFundingBadge && (
+                          <span
+                            className="inline-block mt-1.5 ml-1 text-xs font-medium px-2 py-0.5 rounded-full cursor-default"
+                            style={{ background: fundingBadge.bg, color: fundingBadge.color }}
+                            title="PhD programs in the US typically offer Teaching/Research Assistantships covering full tuition + monthly stipend (~$1,500-2,500)">
+                            {fundingBadge.label} ⓘ
                           </span>
                         )}
                       </div>
@@ -433,16 +487,27 @@ export default function Universities() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="label">Status</label>
-                  <select value={editForm.status} onChange={setEdit('status')} className="input">
-                    <option value="not_started">Not Started</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="submitted">Submitted</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="waitlisted">Waitlisted</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Status</label>
+                    <select value={editForm.status} onChange={setEdit('status')} className="input">
+                      <option value="not_started">Not Started</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="submitted">Submitted</option>
+                      <option value="accepted">Accepted</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="waitlisted">Waitlisted</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Funding Type</label>
+                    <select value={editForm.fundingType} onChange={setEdit('fundingType')} className="input">
+                      <option value="funded">Typically Funded</option>
+                      <option value="self_funded">Self-Funded</option>
+                      <option value="partial">Partial Funding</option>
+                      <option value="unknown">Unknown</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>

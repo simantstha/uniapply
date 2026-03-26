@@ -81,13 +81,26 @@ router.get('/fit-scores', async (req, res) => {
   }
 });
 
+function deriveFunding(degreeLevel) {
+  if (degreeLevel === 'phd') return { fundingType: 'funded', fundingSuggested: true };
+  if (degreeLevel === 'undergraduate') return { fundingType: 'self_funded', fundingSuggested: true };
+  return { fundingType: 'unknown', fundingSuggested: true };
+}
+
 router.get('/', async (req, res) => {
   try {
     const universities = await prisma.university.findMany({
       where: { userId: req.userId },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(universities);
+    const enriched = universities.map(u => {
+      if (u.fundingType !== 'unknown') {
+        return { ...u, fundingSuggested: false };
+      }
+      const derived = deriveFunding(u.degreeLevel);
+      return { ...u, fundingType: derived.fundingType, fundingSuggested: derived.fundingSuggested };
+    });
+    res.json(enriched);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -222,9 +235,39 @@ router.get('/:id/checklist', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    const { name, program, degreeLevel, websiteUrl, category, applicationDeadline, status, notes, fundingType } = req.body;
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (program !== undefined) data.program = program;
+    if (degreeLevel !== undefined) data.degreeLevel = degreeLevel;
+    if (websiteUrl !== undefined) data.websiteUrl = websiteUrl;
+    if (category !== undefined) data.category = category;
+    if (applicationDeadline !== undefined) data.applicationDeadline = applicationDeadline;
+    if (status !== undefined) data.status = status;
+    if (notes !== undefined) data.notes = notes;
+    if (fundingType !== undefined) data.fundingType = fundingType;
     const university = await prisma.university.updateMany({
       where: { id: parseInt(req.params.id), userId: req.userId },
-      data: req.body,
+      data,
+    });
+    if (university.count === 0) return res.status(404).json({ error: 'Not found' });
+    const updated = await prisma.university.findUnique({ where: { id: parseInt(req.params.id) } });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/:id', async (req, res) => {
+  try {
+    const { status, notes, fundingType } = req.body;
+    const data = {};
+    if (status !== undefined) data.status = status;
+    if (notes !== undefined) data.notes = notes;
+    if (fundingType !== undefined) data.fundingType = fundingType;
+    const university = await prisma.university.updateMany({
+      where: { id: parseInt(req.params.id), userId: req.userId },
+      data,
     });
     if (university.count === 0) return res.status(404).json({ error: 'Not found' });
     const updated = await prisma.university.findUnique({ where: { id: parseInt(req.params.id) } });

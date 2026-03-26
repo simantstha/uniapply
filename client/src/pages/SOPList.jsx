@@ -275,7 +275,7 @@ export default function SOPList() {
             </div>
           )}
           {req.error && <p className="text-sm" style={{ color: '#FF3B30' }}>{req.error}</p>}
-          {req.data && <RequirementsPanel data={req.data} websiteUrl={university?.websiteUrl} docStatus={req.data.doc_status} />}
+          {req.data && <RequirementsPanel data={req.data} websiteUrl={university?.websiteUrl} docStatus={req.data.doc_status} degreeLevel={university?.degreeLevel} />}
         </div>
       )}
 
@@ -479,7 +479,38 @@ function ChecklistPanel({ checklist, percentReady }) {
   );
 }
 
-function RequirementsPanel({ data, websiteUrl, docStatus }) {
+function FundingRow({ degreeLevel }) {
+  if (degreeLevel === 'phd') {
+    return (
+      <div className="px-3 py-2.5 rounded-xl col-span-2 sm:col-span-3" style={{ background: 'rgba(52,199,89,0.06)', border: '1px solid rgba(52,199,89,0.3)' }}>
+        <p className="text-xs uppercase tracking-wide font-semibold mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Funding</p>
+        <p className="text-sm font-semibold" style={{ color: '#34C759' }}>Typically fully funded (TA/RA)</p>
+      </div>
+    );
+  }
+  if (degreeLevel === 'masters') {
+    return (
+      <div className="px-3 py-2.5 rounded-xl col-span-2 sm:col-span-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+        <p className="text-xs uppercase tracking-wide font-semibold mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Funding</p>
+        <p className="text-sm font-semibold flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
+          Check program website
+          <ExternalLink size={11} style={{ color: 'var(--accent)' }} />
+        </p>
+      </div>
+    );
+  }
+  if (degreeLevel === 'undergraduate') {
+    return (
+      <div className="px-3 py-2.5 rounded-xl col-span-2 sm:col-span-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+        <p className="text-xs uppercase tracking-wide font-semibold mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Funding</p>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Need-based aid may be available</p>
+      </div>
+    );
+  }
+  return null;
+}
+
+function RequirementsPanel({ data, websiteUrl, docStatus, degreeLevel }) {
   const formatRate = (r) => r != null ? `${Math.round(r * 100)}%` : null;
   const formatGpa = (g) => g != null ? Number(g).toFixed(1) : null;
 
@@ -501,6 +532,7 @@ function RequirementsPanel({ data, websiteUrl, docStatus }) {
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>Academic</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <FundingRow degreeLevel={degreeLevel} />
           {data.gpa?.competitive != null && (
             <Req label="Competitive GPA" value={`${formatGpa(data.gpa.competitive)} / ${data.gpa.scale || '4.0'}`} />
           )}

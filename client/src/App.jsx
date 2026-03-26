@@ -13,6 +13,7 @@ import Documents from './pages/Documents';
 import Onboarding from './pages/Onboarding';
 import Compare from './pages/Compare';
 import ReviewPage from './pages/ReviewPage';
+import Timeline from './pages/Timeline';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ function App() {
               <Route path="sop/:universityId" element={<SOPList />} />
               <Route path="sop/:universityId/:sopId" element={<SOPWorkshop />} />
               <Route path="compare" element={<Compare />} />
+              <Route path="timeline" element={<Timeline />} />
             </Route>
           </Routes>
         </Router>

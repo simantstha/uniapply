@@ -82,6 +82,42 @@ Return ONLY a JSON array with exactly 9 objects, no explanation:
   return JSON.parse(jsonMatch[0]);
 }
 
+export async function generateLorRequestEmail({ studentName, recommenderName, recommenderEmail, relationship, universities, deadline, fieldOfStudy, careerGoals, programLevel }) {
+  const prompt = `You are helping a student from Nepal write a professional email requesting a letter of recommendation.
+
+Student details:
+- Name: ${studentName}
+- Field of study: ${fieldOfStudy || 'graduate studies'}
+- Career goals: ${careerGoals || 'pursuing advanced education abroad'}
+- Applying for: ${programLevel || 'graduate'} programs
+
+Recommender:
+- Name: ${recommenderName}
+- Relationship: ${relationship} (e.g., professor, employer, mentor)
+
+Programs applying to: ${universities.join(', ') || 'several universities abroad'}
+Letter deadline: ${deadline || 'early December'}
+
+Write a professional, respectful email from the student to ${recommenderName} requesting a letter of recommendation. The email should:
+- Open with appropriate formal greeting
+- Briefly explain what programs they are applying to and the deadline
+- Explain why they are asking this specific person (reference the relationship)
+- Mention they will provide all necessary materials (CV, transcript, SOP draft)
+- Express genuine gratitude and offer to answer any questions
+- Close professionally
+
+Tone: Formal but warm. Length: 150-200 words.
+Return ONLY the email text (subject line first, then body), no explanation.`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 600,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return message.content[0].text;
+}
+
 export async function generateCritique(sop, profile, university) {
   const degreeLevel = university.degreeLevel || 'masters';
   const isUndergrad = degreeLevel === 'undergraduate';

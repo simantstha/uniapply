@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/client';
-import { Upload, FileText, Trash2, Download, File, Image, X, Tags, UserCheck, Plus, ChevronDown } from 'lucide-react';
+import { Upload, FileText, Trash2, Download, File, Image, X, Tags, UserCheck, Plus, ChevronDown, Mail } from 'lucide-react';
 
 const DOC_TYPES = [
   { value: 'transcript',      label: 'Transcript',               color: '#0071E3', bg: 'rgba(0,113,227,0.1)' },
@@ -76,6 +76,7 @@ export default function Documents() {
   const [lorError, setLorError] = useState('');
   const [deletingLorId, setDeletingLorId] = useState(null);
   const [cyclingLorId, setCyclingLorId] = useState(null);
+  const [emailModal, setEmailModal] = useState(null); // { lorId, recommenderName, email, loading, error }
 
   const fetchDocs = () => {
     apiClient.get('/api/documents').then(res => setDocs(res.data)).finally(() => setLoading(false));
@@ -218,6 +219,21 @@ export default function Documents() {
     } finally {
       setCyclingLorId(null);
     }
+  };
+
+  const handleDraftEmail = async (lor) => {
+    setEmailModal({ lorId: lor.id, recommenderName: lor.recommenderName, email: null, loading: true, error: null });
+    try {
+      const res = await apiClient.post(`/api/lors/${lor.id}/draft-email`);
+      setEmailModal(prev => prev?.lorId === lor.id ? { ...prev, email: res.data.email, loading: false } : prev);
+    } catch (err) {
+      setEmailModal(prev => prev?.lorId === lor.id ? { ...prev, loading: false, error: err.response?.data?.error || 'Failed to generate email.' } : prev);
+    }
+  };
+
+  const handleRegeneratEmail = () => {
+    const lor = lors.find(l => l.id === emailModal?.lorId);
+    if (lor) handleDraftEmail(lor);
   };
 
   // Group by docType
@@ -413,6 +429,18 @@ export default function Documents() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Draft email button */}
+                    <button
+                      onClick={() => handleDraftEmail(lor)}
+                      title="Draft request email"
+                      className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all"
+                      style={{ background: 'rgba(0,113,227,0.08)', color: 'var(--accent)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,113,227,0.16)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,113,227,0.08)'}>
+                      <Mail size={11} strokeWidth={2} />
+                      <span className="hidden sm:inline">Draft email</span>
+                    </button>
+
                     {/* Clickable status badge */}
                     <button
                       onClick={() => !cyclingLorId && handleCycleStatus(lor)}
@@ -715,6 +743,73 @@ export default function Documents() {
                 {tagSaving ? 'Saving...' : 'Save Tags'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email draft modal */}
+      {emailModal && (
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+          <div className="card shadow-apple-lg w-full sm:max-w-lg rounded-t-2xl rounded-b-none sm:rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Request Email for {emailModal.recommenderName}
+              </h2>
+              <button onClick={() => setEmailModal(null)} style={{ color: 'var(--text-tertiary)' }}>
+                <X size={15} />
+              </button>
+            </div>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-tertiary)' }}>
+              AI-drafted email — review and edit before sending
+            </p>
+
+            {emailModal.loading ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-3">
+                <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
+                  style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Drafting your email...</p>
+              </div>
+            ) : emailModal.error ? (
+              <div className="py-6 text-center">
+                <p className="text-xs mb-4 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>
+                  {emailModal.error}
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => setEmailModal(null)} className="btn-secondary flex-1">Close</button>
+                  <button onClick={handleRegeneratEmail} className="btn-primary flex-1">Try again</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <textarea
+                  className="w-full rounded-xl p-3 text-xs font-mono resize-none mb-4"
+                  style={{
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border)',
+                    minHeight: '220px',
+                    lineHeight: '1.6',
+                  }}
+                  value={emailModal.email || ''}
+                  onChange={e => setEmailModal(prev => ({ ...prev, email: e.target.value }))}
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setEmailModal(null)} className="btn-secondary">Close</button>
+                  <button
+                    onClick={handleRegeneratEmail}
+                    className="btn-secondary flex items-center gap-1.5">
+                    <Mail size={12} />
+                    Regenerate
+                  </button>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(emailModal.email || '')}
+                    className="btn-primary flex-1 flex items-center justify-center gap-1.5">
+                    Copy to clipboard
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

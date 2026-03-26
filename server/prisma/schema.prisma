@@ -67,6 +67,7 @@ model University {
   applicationDeadline DateTime? @map("application_deadline")
   status              String    @default("not_started")
   notes               String?
+  fundingType         String    @default("unknown") @map("funding_type") // "funded", "self_funded", "partial", "unknown"
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
