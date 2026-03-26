@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/client';
-import { Upload, FileText, Trash2, Download, File, Image, X, Tags } from 'lucide-react';
+import { Upload, FileText, Trash2, Download, File, Image, X, Tags, UserCheck, Plus, ChevronDown } from 'lucide-react';
 
 const DOC_TYPES = [
   { value: 'transcript',      label: 'Transcript',               color: '#0071E3', bg: 'rgba(0,113,227,0.1)' },
@@ -14,6 +14,22 @@ const DOC_TYPES = [
 
 const typeMap = Object.fromEntries(DOC_TYPES.map(t => [t.value, t]));
 
+const LOR_STATUS_ORDER = ['not_asked', 'asked', 'confirmed', 'submitted'];
+
+const lorStatusConfig = {
+  not_asked:  { label: 'Not Asked',  color: 'var(--text-tertiary)', bg: 'rgba(0,0,0,0.05)' },
+  asked:      { label: 'Asked',      color: '#D4A843',              bg: 'rgba(212,168,67,0.12)' },
+  confirmed:  { label: 'Confirmed',  color: '#0071E3',              bg: 'rgba(0,113,227,0.1)' },
+  submitted:  { label: 'Submitted',  color: '#34C759',              bg: 'rgba(52,199,89,0.1)' },
+};
+
+const RELATIONSHIP_OPTIONS = [
+  { value: 'professor', label: 'Professor' },
+  { value: 'employer',  label: 'Employer' },
+  { value: 'mentor',    label: 'Mentor' },
+  { value: 'other',     label: 'Other' },
+];
+
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -23,6 +39,16 @@ function formatSize(bytes) {
 function fileIcon(mimeType) {
   if (mimeType?.startsWith('image/')) return <Image size={16} />;
   return <FileText size={16} />;
+}
+
+function isDeadlineSoon(deadline) {
+  if (!deadline) return false;
+  const diff = new Date(deadline) - new Date();
+  return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
+}
+
+function formatDeadline(deadline) {
+  return new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default function Documents() {
@@ -41,12 +67,27 @@ export default function Documents() {
   const [deletingId, setDeletingId] = useState(null);
   const inputRef = useRef(null);
 
+  // LOR state
+  const [lors, setLors] = useState([]);
+  const [lorsLoading, setLorsLoading] = useState(true);
+  const [showLorForm, setShowLorForm] = useState(false);
+  const [lorForm, setLorForm] = useState({ recommenderName: '', recommenderEmail: '', relationship: 'professor', universityIds: [], deadline: '', notes: '' });
+  const [lorSaving, setLorSaving] = useState(false);
+  const [lorError, setLorError] = useState('');
+  const [deletingLorId, setDeletingLorId] = useState(null);
+  const [cyclingLorId, setCyclingLorId] = useState(null);
+
   const fetchDocs = () => {
     apiClient.get('/api/documents').then(res => setDocs(res.data)).finally(() => setLoading(false));
   };
 
+  const fetchLors = () => {
+    apiClient.get('/api/lors').then(res => setLors(res.data)).catch(() => {}).finally(() => setLorsLoading(false));
+  };
+
   useEffect(() => {
     fetchDocs();
+    fetchLors();
     apiClient.get('/api/universities').then(res => setUniversities(res.data)).catch(() => {});
   }, []);
 
@@ -123,6 +164,62 @@ export default function Documents() {
       });
   };
 
+  // LOR handlers
+  const handleLorFormReset = () => {
+    setLorForm({ recommenderName: '', recommenderEmail: '', relationship: 'professor', universityIds: [], deadline: '', notes: '' });
+    setLorError('');
+    setShowLorForm(false);
+  };
+
+  const handleLorSave = async (e) => {
+    e.preventDefault();
+    if (!lorForm.recommenderName.trim()) {
+      setLorError('Recommender name is required.');
+      return;
+    }
+    setLorSaving(true);
+    setLorError('');
+    try {
+      const res = await apiClient.post('/api/lors', {
+        recommenderName: lorForm.recommenderName.trim(),
+        recommenderEmail: lorForm.recommenderEmail.trim() || undefined,
+        relationship: lorForm.relationship,
+        universityIds: lorForm.universityIds,
+        deadline: lorForm.deadline || undefined,
+        notes: lorForm.notes.trim() || undefined,
+      });
+      setLors(prev => [res.data, ...prev]);
+      handleLorFormReset();
+    } catch (err) {
+      setLorError(err.response?.data?.error || 'Failed to save.');
+    } finally {
+      setLorSaving(false);
+    }
+  };
+
+  const handleLorDeleteConfirm = async (id) => {
+    await apiClient.delete(`/api/lors/${id}`).catch(() => {});
+    setLors(prev => prev.filter(l => l.id !== id));
+    setDeletingLorId(null);
+  };
+
+  const handleCycleStatus = async (lor) => {
+    const currentIdx = LOR_STATUS_ORDER.indexOf(lor.status);
+    const nextStatus = LOR_STATUS_ORDER[(currentIdx + 1) % LOR_STATUS_ORDER.length];
+    // Optimistic update
+    setLors(prev => prev.map(l => l.id === lor.id ? { ...l, status: nextStatus } : l));
+    setCyclingLorId(lor.id);
+    try {
+      const res = await apiClient.patch(`/api/lors/${lor.id}`, { status: nextStatus });
+      setLors(prev => prev.map(l => l.id === lor.id ? { ...l, ...res.data } : l));
+    } catch {
+      // Revert optimistic update on failure
+      setLors(prev => prev.map(l => l.id === lor.id ? { ...l, status: lor.status } : l));
+    } finally {
+      setCyclingLorId(null);
+    }
+  };
+
   // Group by docType
   const grouped = DOC_TYPES.reduce((acc, t) => {
     const items = docs.filter(d => d.docType === t.value);
@@ -141,6 +238,227 @@ export default function Documents() {
           <Upload size={13} strokeWidth={2.5} />
           <span className="hidden sm:inline">Upload</span>
         </button>
+      </div>
+
+      {/* ── Recommendation Letters Section ── */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759' }}>
+              Recommendation Letters
+            </span>
+            {!lorsLoading && (
+              <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{lors.length}</span>
+            )}
+          </div>
+          <button
+            onClick={() => { setShowLorForm(v => !v); setLorError(''); }}
+            className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all"
+            style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,113,227,0.16)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--accent-subtle)'}>
+            <Plus size={12} strokeWidth={2.5} />
+            Add Recommender
+          </button>
+        </div>
+
+        {/* Inline add form */}
+        {showLorForm && (
+          <div className="card p-4 mb-3 shadow-apple-sm" style={{ border: '1px solid var(--accent)20' }}>
+            {lorError && (
+              <div className="mb-3 px-3 py-2 rounded-xl text-xs" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>{lorError}</div>
+            )}
+            <form onSubmit={handleLorSave} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="label">Recommender Name <span style={{ color: '#FF3B30' }}>*</span></label>
+                  <input
+                    value={lorForm.recommenderName}
+                    onChange={e => setLorForm(f => ({ ...f, recommenderName: e.target.value }))}
+                    placeholder="e.g. Dr. Jane Smith"
+                    className="input"
+                    required
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="label">Relationship</label>
+                  <select
+                    value={lorForm.relationship}
+                    onChange={e => setLorForm(f => ({ ...f, relationship: e.target.value }))}
+                    className="input">
+                    {RELATIONSHIP_OPTIONS.map(r => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="label">Email (optional)</label>
+                  <input
+                    value={lorForm.recommenderEmail}
+                    onChange={e => setLorForm(f => ({ ...f, recommenderEmail: e.target.value }))}
+                    placeholder="email@example.com"
+                    type="email"
+                    className="input"
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="label">Deadline (optional)</label>
+                  <input
+                    value={lorForm.deadline}
+                    onChange={e => setLorForm(f => ({ ...f, deadline: e.target.value }))}
+                    type="date"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {universities.length > 0 && (
+                <div>
+                  <label className="label">Tag Universities</label>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    <button type="button"
+                      onClick={() => setLorForm(f => ({
+                        ...f,
+                        universityIds: f.universityIds.length === universities.length
+                          ? []
+                          : universities.map(u => u.id),
+                      }))}
+                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={{
+                        background: lorForm.universityIds.length === universities.length ? 'var(--accent-subtle)' : 'var(--bg-secondary)',
+                        color: lorForm.universityIds.length === universities.length ? 'var(--accent)' : 'var(--text-secondary)',
+                      }}>
+                      {lorForm.universityIds.length === universities.length ? '✓ All universities' : 'Tag all universities'}
+                    </button>
+                    {universities.map(u => (
+                      <button key={u.id} type="button"
+                        onClick={() => setLorForm(f => ({
+                          ...f,
+                          universityIds: f.universityIds.includes(u.id)
+                            ? f.universityIds.filter(id => id !== u.id)
+                            : [...f.universityIds, u.id],
+                        }))}
+                        className="w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all flex items-center justify-between"
+                        style={{
+                          background: lorForm.universityIds.includes(u.id) ? 'var(--accent-subtle)' : 'var(--bg-secondary)',
+                          color: lorForm.universityIds.includes(u.id) ? 'var(--accent)' : 'var(--text-secondary)',
+                        }}>
+                        <span className="truncate">{u.name}</span>
+                        {lorForm.universityIds.includes(u.id) && <span className="text-xs ml-2 flex-shrink-0">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={handleLorFormReset} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" disabled={lorSaving} className="btn-primary flex-1">
+                  {lorSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* LOR list */}
+        {lorsLoading ? (
+          <div className="flex items-center justify-center h-20">
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+          </div>
+        ) : lors.length === 0 && !showLorForm ? (
+          <div className="card p-8 text-center shadow-apple-sm">
+            <UserCheck size={24} className="mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} />
+            <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No recommenders added yet</p>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-tertiary)' }}>Add the professors or employers writing your letters.</p>
+            <button
+              onClick={() => setShowLorForm(true)}
+              className="btn-primary text-xs px-4 py-1.5 mx-auto">
+              Add Recommender
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {lors.map(lor => {
+              const sc = lorStatusConfig[lor.status] || lorStatusConfig.not_asked;
+              const relLabel = RELATIONSHIP_OPTIONS.find(r => r.value === lor.relationship)?.label || lor.relationship;
+              const deadlineSoon = isDeadlineSoon(lor.deadline);
+              return (
+                <div key={lor.id} className="card p-3.5 shadow-apple-sm flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759' }}>
+                    <UserCheck size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{lor.recommenderName}</p>
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>· {relLabel}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      {lor.deadline && (
+                        <span className="text-xs" style={{ color: deadlineSoon ? '#FF3B30' : 'var(--text-tertiary)' }}>
+                          {deadlineSoon ? '⚠ ' : ''}Due {formatDeadline(lor.deadline)}
+                        </span>
+                      )}
+                      {lor.universities?.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {lor.universities.map(u => (
+                            <span key={u.id} className="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                              style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
+                              {u.name.length > 20 ? u.name.slice(0, 20) + '…' : u.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Clickable status badge */}
+                    <button
+                      onClick={() => !cyclingLorId && handleCycleStatus(lor)}
+                      title="Click to advance status"
+                      className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all"
+                      style={{ background: sc.bg, color: sc.color, opacity: cyclingLorId === lor.id ? 0.6 : 1 }}>
+                      {sc.label}
+                      <ChevronDown size={10} strokeWidth={2.5} />
+                    </button>
+
+                    {/* Delete with inline confirm */}
+                    {deletingLorId === lor.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs" style={{ color: '#FF3B30' }}>Delete?</span>
+                        <button
+                          onClick={() => handleLorDeleteConfirm(lor.id)}
+                          className="text-xs px-2 py-1 rounded-md text-white"
+                          style={{ background: '#FF3B30' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.85)'}
+                          onMouseLeave={e => e.currentTarget.style.background = '#FF3B30'}>
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setDeletingLorId(null)}
+                          className="text-xs px-2 py-1 rounded-md"
+                          style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-elevated)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-elevated)'}>
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setDeletingLorId(lor.id)}
+                        className="p-1.5 rounded-lg transition-all"
+                        style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Drop zone */}

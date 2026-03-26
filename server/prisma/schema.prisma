@@ -22,6 +22,7 @@ model User {
   universities University[]
   sops         SOP[]
   documents    Document[]
+  lors         LetterOfRecommendation[]
 
   @@map("users")
 }
@@ -95,8 +96,34 @@ model SOP {
   university University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
   user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   critiques  SOPCritique[]
+  shareLinks SOPShareLink[]
 
   @@map("sops")
+}
+
+model SOPShareLink {
+  id        Int       @id @default(autoincrement())
+  sopId     Int       @map("sop_id")
+  token     String    @unique
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  sop      SOP                @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  comments SOPReviewComment[]
+
+  @@map("sop_share_links")
+}
+
+model SOPReviewComment {
+  id            Int      @id @default(autoincrement())
+  shareLinkId   Int      @map("share_link_id")
+  reviewerName  String   @map("reviewer_name")
+  comment       String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  shareLink SOPShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+
+  @@map("sop_review_comments")
 }
 
 model Document {
@@ -146,6 +173,24 @@ model SOPCritique {
   sop SOP @relation(fields: [sopId], references: [id], onDelete: Cascade)
 
   @@map("sop_critiques")
+}
+
+model LetterOfRecommendation {
+  id                Int       @id @default(autoincrement())
+  userId            Int       @map("user_id")
+  recommenderName   String    @map("recommender_name")
+  recommenderEmail  String?   @map("recommender_email")
+  relationship      String    // "professor", "employer", "mentor", "other"
+  status            String    @default("not_asked") // "not_asked", "asked", "confirmed", "submitted"
+  universityIds     String?   @map("university_ids") // JSON array of university IDs
+  deadline          DateTime?
+  notes             String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("letters_of_recommendation")
 }
 
 model UniversityRequirements {

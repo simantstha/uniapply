@@ -6,7 +6,7 @@ import apiClient from '../api/client';
 import {
   ChevronLeft, Sparkles, CheckCircle, AlertCircle, TrendingUp,
   Bold, Italic, List, ListOrdered, Heading2, Quote, Undo2, Redo2,
-  Strikethrough, BookOpen, Save, Minus,
+  Strikethrough, BookOpen, Save, Minus, Share2, Copy, Link, Trash2, MessageSquare,
 } from 'lucide-react';
 
 // ─── guided questions ─────────────────────────────────────────────────────────
@@ -74,8 +74,13 @@ export default function SOPWorkshop() {
   const [mobileTab, setMobileTab] = useState('editor');
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [draftError, setDraftError] = useState('');
+  const [shareLink, setShareLink] = useState(null);
+  const [showSharePanel, setShowSharePanel] = useState(false);
+  const [reviewComments, setReviewComments] = useState([]);
+  const [shareCopied, setShareCopied] = useState(false);
   const saveTimer = useRef(null);
   const sopIdRef = useRef(null);
+  const sharePanelRef = useRef(null);
 
   // inject editor styles once
   useEffect(() => {
@@ -136,6 +141,11 @@ export default function SOPWorkshop() {
           setCritique(parseCritique(existing.critiques[0]));
           setActiveTab('critique');
         }
+        // Fetch review comments for this SOP
+        return apiClient.get(`/api/sops/${existing.id}/review-comments`);
+      })
+      .then(res => {
+        if (res) setReviewComments(res.data);
       })
       .catch(() => navigate(`/sop/${universityId}`));
   }, [sopId, editor]);
@@ -170,6 +180,36 @@ export default function SOPWorkshop() {
     } finally {
       setGeneratingDraft(false);
     }
+  };
+
+  const handleShare = async () => {
+    if (!sopIdRef.current) return;
+    try {
+      const res = await apiClient.post(`/api/sops/${sopIdRef.current}/share`);
+      setShareLink(res.data);
+      setShowSharePanel(true);
+    } catch (err) {
+      console.error('Share failed', err);
+    }
+  };
+
+  const handleRevokeShare = async () => {
+    if (!sopIdRef.current) return;
+    try {
+      await apiClient.delete(`/api/sops/${sopIdRef.current}/share`);
+      setShareLink(null);
+      setShowSharePanel(false);
+    } catch (err) {
+      console.error('Revoke failed', err);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!shareLink) return;
+    navigator.clipboard.writeText(shareLink.url).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    });
   };
 
   const degreeLevel = university?.degreeLevel || 'masters';
@@ -222,6 +262,60 @@ export default function SOPWorkshop() {
             <Save size={12} strokeWidth={1.8} />
             <span className="hidden sm:inline">Save</span>
           </button>
+
+          {/* Share button + dropdown */}
+          <div className="relative" ref={sharePanelRef}>
+            <button
+              onClick={() => showSharePanel ? setShowSharePanel(false) : handleShare()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border relative"
+              style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-secondary)'}>
+              <Share2 size={12} strokeWidth={1.8} />
+              <span className="hidden sm:inline">Share</span>
+              {reviewComments.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-white font-semibold"
+                  style={{ background: 'var(--accent)', fontSize: '10px', lineHeight: '1' }}>
+                  {reviewComments.length}
+                </span>
+              )}
+            </button>
+
+            {showSharePanel && shareLink && (
+              <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl shadow-apple p-4 z-50 flex flex-col gap-3"
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Share for review</p>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Anyone with this link can read your SOP and leave a comment — no account needed.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    readOnly
+                    value={shareLink.url}
+                    className="flex-1 text-xs px-3 py-2 rounded-xl min-w-0"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                  />
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium transition-all flex-shrink-0"
+                    style={{ background: shareCopied ? 'rgba(52,199,89,0.12)' : 'rgba(0,113,227,0.08)', color: shareCopied ? '#34C759' : 'var(--accent)', border: `1px solid ${shareCopied ? 'rgba(52,199,89,0.2)' : 'rgba(0,113,227,0.15)'}` }}>
+                    <Copy size={11} strokeWidth={2} />
+                    {shareCopied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <button
+                  onClick={handleRevokeShare}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all"
+                  style={{ background: 'rgba(255,59,48,0.07)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.15)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.12)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.07)'}>
+                  <Trash2 size={11} strokeWidth={2} />
+                  Revoke link
+                </button>
+              </div>
+            )}
+          </div>
+
           <button onClick={handleGetCritique} disabled={wordCount < 50 || critiquing}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white transition-all"
             style={{ background: wordCount < 50 ? 'rgba(191,90,242,0.4)' : '#BF5AF2', cursor: wordCount < 50 ? 'not-allowed' : 'pointer' }}>
@@ -509,6 +603,32 @@ export default function SOPWorkshop() {
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Reviews section */}
+            {reviewComments.length > 0 && (
+              <div className="p-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                <div className="flex items-center gap-1.5 mb-3" style={{ color: 'var(--accent)' }}>
+                  <MessageSquare size={13} strokeWidth={2} />
+                  <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    Reviews ({reviewComments.length})
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {reviewComments.map(rc => (
+                    <div key={rc.id} className="rounded-xl p-3"
+                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{rc.reviewerName}</span>
+                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          {new Date(rc.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{rc.comment}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -12,6 +12,7 @@ import SOPList from './pages/SOPList';
 import Documents from './pages/Documents';
 import Onboarding from './pages/Onboarding';
 import Compare from './pages/Compare';
+import ReviewPage from './pages/ReviewPage';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ function App() {
             <Route path="/login" element={<LoginForm />} />
             <Route path="/signup" element={<SignupForm />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/review/:token" element={<ReviewPage />} />
             <Route path="/" element={
               <PrivateRoute>
                 <Layout />
