@@ -9,9 +9,15 @@ const steps = [
   { id: 4, label: 'Experience' },
 ];
 
+const GPA_SCALES = {
+  us_4:       { min: 0, max: 4.0,  label: '0–4.0', placeholder: '3.7' },
+  cgpa_10:    { min: 0, max: 10.0, label: '0–10',  placeholder: '8.5' },
+  percentage: { min: 0, max: 100,  label: '0–100', placeholder: '85'  },
+};
+
 const defaultForm = {
   studyLevel: 'masters',
-  undergraduateInstitution: '', undergraduateMajor: '', graduationYear: '', gpa: '',
+  undergraduateInstitution: '', undergraduateMajor: '', graduationYear: '', gpa: '', gpaScale: 'us_4',
   satScore: '', actScore: '',
   greVerbal: '', greQuant: '', greWriting: '', toeflScore: '', ieltsScore: '',
   fieldOfStudy: '', careerGoals: '', researchInterests: '', workExperienceYears: '', extracurriculars: '',
@@ -44,9 +50,45 @@ export default function Profile() {
     }).finally(() => setFetching(false));
   }, []);
 
-  const set = field => e => setForm(f => ({ ...f, [field]: e.target.value }));
+  const SCORE_RANGES = {
+    gpa:               { ...GPA_SCALES[form.gpaScale || 'us_4'] },
+    satScore:          { min: 400, max: 1600, label: '400–1600' },
+    actScore:          { min: 1,   max: 36,   label: '1–36' },
+    greVerbal:         { min: 130, max: 170,  label: '130–170' },
+    greQuant:          { min: 130, max: 170,  label: '130–170' },
+    greWriting:        { min: 0,   max: 6,    label: '0–6' },
+    toeflScore:        { min: 0,   max: 120,  label: '0–120' },
+    ieltsScore:        { min: 0,   max: 9,    label: '0–9' },
+    graduationYear:    { min: 1990, max: 2035, label: '1990–2035' },
+    workExperienceYears: { min: 0, max: 50,   label: '0–50' },
+  };
+
+  const [errors, setErrors] = useState({});
+
+  const setGpaScale = scale => {
+    setForm(f => ({ ...f, gpaScale: scale, gpa: '' }));
+    setErrors(err => { const next = { ...err }; delete next.gpa; return next; });
+  };
+
+  const set = field => e => {
+    const val = e.target.value;
+    setForm(f => ({ ...f, [field]: val }));
+    if (val !== '' && SCORE_RANGES[field]) {
+      const { min, max, label } = SCORE_RANGES[field];
+      const num = Number(val);
+      if (num < min || num > max) {
+        setErrors(err => ({ ...err, [field]: `Must be ${label}` }));
+      } else {
+        setErrors(err => { const next = { ...err }; delete next[field]; return next; });
+      }
+    } else {
+      setErrors(err => { const next = { ...err }; delete next[field]; return next; });
+    }
+  };
 
   const handleSave = async () => {
+    // Block save if any field has a validation error
+    if (Object.keys(errors).length > 0) return;
     setLoading(true);
     try {
       const payload = { ...form };
@@ -118,8 +160,30 @@ export default function Profile() {
               <Field
                 label={isUndergrad ? 'Graduation Year' : 'Graduation Year'}
                 value={form.graduationYear} onChange={set('graduationYear')}
-                placeholder={isUndergrad ? '2025' : '2023'} type="number" />
-              <Field label="GPA" value={form.gpa} onChange={set('gpa')} placeholder="3.7" type="number" />
+                placeholder={isUndergrad ? '2025' : '2023'} type="number"
+                min={1990} max={2035} error={errors.graduationYear} />
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label">GPA</label>
+                  <div className="flex gap-1">
+                    {[['us_4','4.0'],['cgpa_10','/10'],['percentage','%']].map(([key, lbl]) => (
+                      <button key={key} type="button" onClick={() => setGpaScale(key)}
+                        className="px-2 py-0.5 rounded-md text-xs font-medium transition-all"
+                        style={form.gpaScale === key
+                          ? { background: 'rgba(0,113,227,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,113,227,0.3)' }
+                          : { background: 'var(--bg-secondary)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' }}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <input type="number" value={form.gpa} onChange={set('gpa')}
+                  placeholder={GPA_SCALES[form.gpaScale || 'us_4'].placeholder}
+                  min={0} max={GPA_SCALES[form.gpaScale || 'us_4'].max} step={0.01}
+                  className="input"
+                  style={errors.gpa ? { borderColor: '#FF3B30', background: 'rgba(255,59,48,0.04)' } : {}} />
+                {errors.gpa && <p className="text-xs mt-1" style={{ color: '#FF3B30' }}>{errors.gpa}</p>}
+              </div>
             </div>
           </div>
         )}
@@ -131,19 +195,26 @@ export default function Profile() {
             </SectionTitle>
             {isUndergrad ? (
               <div className="grid grid-cols-2 gap-3">
-                <Field label="SAT" value={form.satScore} onChange={set('satScore')} placeholder="400–1600" type="number" />
-                <Field label="ACT" value={form.actScore} onChange={set('actScore')} placeholder="1–36" type="number" />
+                <Field label="SAT" value={form.satScore} onChange={set('satScore')} placeholder="400–1600" type="number"
+                  min={400} max={1600} error={errors.satScore} />
+                <Field label="ACT" value={form.actScore} onChange={set('actScore')} placeholder="1–36" type="number"
+                  min={1} max={36} error={errors.actScore} />
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <Field label="GRE Verbal" value={form.greVerbal} onChange={set('greVerbal')} placeholder="130–170" type="number" />
-                <Field label="GRE Quant" value={form.greQuant} onChange={set('greQuant')} placeholder="130–170" type="number" />
-                <Field label="GRE Writing" value={form.greWriting} onChange={set('greWriting')} placeholder="0–6" type="number" />
+                <Field label="GRE Verbal" value={form.greVerbal} onChange={set('greVerbal')} placeholder="130–170" type="number"
+                  min={130} max={170} error={errors.greVerbal} />
+                <Field label="GRE Quant" value={form.greQuant} onChange={set('greQuant')} placeholder="130–170" type="number"
+                  min={130} max={170} error={errors.greQuant} />
+                <Field label="GRE Writing" value={form.greWriting} onChange={set('greWriting')} placeholder="0–6" type="number"
+                  min={0} max={6} step={0.5} error={errors.greWriting} />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="TOEFL" value={form.toeflScore} onChange={set('toeflScore')} placeholder="0–120" type="number" />
-              <Field label="IELTS" value={form.ieltsScore} onChange={set('ieltsScore')} placeholder="0–9" type="number" />
+              <Field label="TOEFL" value={form.toeflScore} onChange={set('toeflScore')} placeholder="0–120" type="number"
+                min={0} max={120} error={errors.toeflScore} />
+              <Field label="IELTS" value={form.ieltsScore} onChange={set('ieltsScore')} placeholder="0–9" type="number"
+                min={0} max={9} step={0.5} error={errors.ieltsScore} />
             </div>
           </div>
         )}
@@ -167,7 +238,8 @@ export default function Profile() {
           <div className="space-y-4">
             <SectionTitle>Experience & Activities</SectionTitle>
             {!isUndergrad && (
-              <Field label="Work Experience (years)" value={form.workExperienceYears} onChange={set('workExperienceYears')} placeholder="2" type="number" />
+              <Field label="Work Experience (years)" value={form.workExperienceYears} onChange={set('workExperienceYears')} placeholder="2" type="number"
+                min={0} max={50} error={errors.workExperienceYears} />
             )}
             <TextArea
               label={isUndergrad ? 'Extracurriculars, Clubs & Achievements' : 'Extracurriculars & Achievements'}
@@ -184,7 +256,9 @@ export default function Profile() {
           {step > 1 && <button onClick={() => setStep(s => s - 1)} className="btn-secondary">Back</button>}
           {step < 4 && <button onClick={() => setStep(s => s + 1)} className="btn-secondary">Next</button>}
         </div>
-        <button onClick={handleSave} disabled={loading} className="btn-primary flex items-center gap-2">
+        <button onClick={handleSave} disabled={loading || Object.keys(errors).length > 0}
+          className="btn-primary flex items-center gap-2"
+          style={Object.keys(errors).length > 0 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}>
           {saved && <Check size={13} />}
           {saved ? 'Saved' : loading ? 'Saving...' : 'Save Profile'}
         </button>
@@ -197,11 +271,17 @@ function SectionTitle({ children }) {
   return <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</p>;
 }
 
-function Field({ label, value, onChange, placeholder, type = 'text' }) {
+function Field({ label, value, onChange, placeholder, type = 'text', min, max, step, error }) {
   return (
     <div>
       <label className="label">{label}</label>
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder} className="input" />
+      <input
+        type={type} value={value} onChange={onChange} placeholder={placeholder}
+        min={min} max={max} step={step}
+        className="input"
+        style={error ? { borderColor: '#FF3B30', background: 'rgba(255,59,48,0.04)' } : {}}
+      />
+      {error && <p className="text-xs mt-1" style={{ color: '#FF3B30' }}>{error}</p>}
     </div>
   );
 }

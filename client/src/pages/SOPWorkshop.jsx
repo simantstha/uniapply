@@ -3,58 +3,99 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import apiClient from '../api/client';
-import { Save, ChevronLeft, HelpCircle, X, FileText, Sparkles, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import {
+  ChevronLeft, Sparkles, CheckCircle, AlertCircle, TrendingUp,
+  Bold, Italic, List, ListOrdered, Heading2, Quote, Undo2, Redo2,
+  Strikethrough, BookOpen, Save, Minus,
+} from 'lucide-react';
 
+// ─── guided questions ─────────────────────────────────────────────────────────
 const GUIDED_QUESTIONS = {
   undergraduate: [
-    { q: 'Why this major?', hint: 'What sparked your interest in this field? Share a specific moment or experience that made it click.' },
-    { q: 'Why this university?', hint: 'Mention specific programs, clubs, courses, or values that excite you about this school.' },
+    { q: 'Why this major?', hint: 'What sparked your interest? Share a specific moment or experience that made it click for you.' },
+    { q: 'Why this university?', hint: 'Mention specific programs, clubs, courses, or values that genuinely excite you about this school.' },
     { q: 'What is your story?', hint: 'What experiences — school, family, community — shaped who you are? Be personal and specific.' },
     { q: 'What are your goals?', hint: 'What do you want to do after college? How does this degree help you get there?' },
-    { q: 'What makes you stand out?', hint: 'Highlight achievements, projects, leadership, or skills that show your potential.' },
+    { q: 'What makes you stand out?', hint: 'Achievements, leadership, projects, or skills that show your potential.' },
   ],
   masters: [
-    { q: 'Why this university?', hint: 'Mention specific faculty, labs, or programs that align with your goals.' },
-    { q: 'What is your unique story?', hint: 'What experiences shaped your academic journey? Be specific and personal.' },
-    { q: 'What are your career goals?', hint: 'Where do you see yourself in 5–10 years? How does this degree help?' },
-    { q: 'Why are you qualified?', hint: 'Highlight key projects, research, or work experience that make you stand out.' },
-    { q: 'What will you contribute?', hint: 'How will you add value to the program and the professional community?' },
+    { q: 'Why this university?', hint: 'Mention specific faculty, labs, or programs that directly align with your goals.' },
+    { q: 'What is your story?', hint: 'What experiences shaped your academic journey? Be specific and personal.' },
+    { q: 'What are your career goals?', hint: 'Where do you see yourself in 5–10 years? How does this degree get you there?' },
+    { q: 'Why are you qualified?', hint: 'Key projects, research, or work experience that make you the right fit.' },
+    { q: 'What will you contribute?', hint: 'How will you add value to the program and the broader professional community?' },
   ],
   phd: [
-    { q: 'What research question drives you?', hint: 'Be specific about the problem you want to solve and why it matters.' },
+    { q: 'What research question drives you?', hint: 'Be specific about the problem you want to solve and why it matters to the field.' },
     { q: 'Why this advisor / lab?', hint: 'Name specific faculty whose work aligns with yours. Show you\'ve read their papers.' },
-    { q: 'What is your research background?', hint: 'Detail your most relevant research experience, methods, and findings.' },
+    { q: 'What is your research background?', hint: 'Your most relevant research experience, methods used, and key findings.' },
     { q: 'What are your career goals?', hint: 'Academia, industry research, policy? How does this PhD prepare you?' },
-    { q: 'What will you contribute?', hint: 'How does your unique perspective or background strengthen the research community?' },
+    { q: 'What will you contribute?', hint: 'How does your unique perspective strengthen the research community?' },
   ],
 };
 
-function getGuidedQuestions(degreeLevel) {
-  return GUIDED_QUESTIONS[degreeLevel] || GUIDED_QUESTIONS.masters;
-}
+const getGuidedQuestions = d => GUIDED_QUESTIONS[d] || GUIDED_QUESTIONS.masters;
+
+// ─── word count targets ────────────────────────────────────────────────────────
+const WORD_TARGETS = {
+  undergraduate: { min: 550, max: 650,  label: '550–650' },
+  masters:       { min: 500, max: 900,  label: '500–900' },
+  phd:           { min: 600, max: 1000, label: '600–1,000' },
+};
+const getTarget = d => WORD_TARGETS[d] || WORD_TARGETS.masters;
+
+// ─── editor prose styles ───────────────────────────────────────────────────────
+const EDITOR_STYLES = `
+  .sop-prose .ProseMirror { outline: none; }
+  .sop-prose .ProseMirror > * + * { margin-top: 0.85em; }
+  .sop-prose .ProseMirror p { margin: 0; }
+  .sop-prose .ProseMirror h2 { font-size: 1.15em; font-weight: 700; letter-spacing: -0.01em; margin-top: 1.6em; margin-bottom: 0.4em; }
+  .sop-prose .ProseMirror ul { padding-left: 1.4em; list-style-type: disc; }
+  .sop-prose .ProseMirror ol { padding-left: 1.4em; list-style-type: decimal; }
+  .sop-prose .ProseMirror li + li { margin-top: 0.25em; }
+  .sop-prose .ProseMirror blockquote { border-left: 3px solid #0071E3; padding-left: 1em; margin-left: 0; opacity: 0.75; font-style: italic; }
+  .sop-prose .ProseMirror strong { font-weight: 650; }
+  .sop-prose .ProseMirror s { text-decoration: line-through; opacity: 0.6; }
+  .sop-prose .ProseMirror hr { border: none; border-top: 1px solid var(--border); margin: 1.5em 0; }
+`;
 
 export default function SOPWorkshop() {
-  const { universityId } = useParams();
+  const { universityId, sopId } = useParams();
   const navigate = useNavigate();
+
   const [university, setUniversity] = useState(null);
   const [sop, setSop] = useState(null);
-  const [showGuide, setShowGuide] = useState(false);
   const [saveStatus, setSaveStatus] = useState('saved');
   const [wordCount, setWordCount] = useState(0);
   const [critique, setCritique] = useState(null);
   const [critiquing, setCritiquing] = useState(false);
   const [critiqueError, setCritiqueError] = useState('');
-  const [mobileTab, setMobileTab] = useState('editor'); // 'editor' | 'critique'
+  const [activeTab, setActiveTab] = useState('guide'); // 'guide' | 'critique'
+  const [mobileTab, setMobileTab] = useState('editor');
   const saveTimer = useRef(null);
   const sopIdRef = useRef(null);
+
+  // inject editor styles once
+  useEffect(() => {
+    const el = document.createElement('style');
+    el.id = 'sop-editor-styles';
+    el.textContent = EDITOR_STYLES;
+    document.head.appendChild(el);
+    return () => document.getElementById('sop-editor-styles')?.remove();
+  }, []);
 
   const editor = useEditor({
     extensions: [StarterKit],
     content: '',
-    editorProps: { attributes: { class: 'prose prose-sm max-w-none focus:outline-none min-h-[400px] p-1' } },
+    editorProps: {
+      attributes: {
+        class: 'sop-prose',
+        style: 'font-size:16.5px;line-height:1.85;color:var(--text-primary);min-height:480px;',
+      },
+    },
     onUpdate: ({ editor }) => {
-      const text = editor.getText();
-      setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
+      const words = editor.getText().trim().split(/\s+/).filter(Boolean).length;
+      setWordCount(words);
       setSaveStatus('unsaved');
       clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => autoSave(editor.getHTML()), 30000);
@@ -77,32 +118,25 @@ export default function SOPWorkshop() {
   };
 
   useEffect(() => {
-    apiClient.get(`/api/universities/${universityId}`)
-      .then(res => setUniversity(res.data))
-      .catch(() => navigate('/universities'));
-
-    apiClient.get(`/api/sops?universityId=${universityId}`)
-      .then(async res => {
-        let existing;
-        if (res.data.length > 0) {
-          existing = res.data[0];
-        } else {
-          const created = await apiClient.post('/api/sops', {
-            universityId: parseInt(universityId), title: 'Statement of Purpose', content: '',
-          });
-          existing = created.data;
-        }
+    if (!editor) return;
+    apiClient.get(`/api/sops/${sopId}`)
+      .then(res => {
+        const existing = res.data;
         setSop(existing);
+        setUniversity(existing.university);
         sopIdRef.current = existing.id;
         if (existing.content) {
-          editor?.commands.setContent(existing.content);
+          editor.commands.setContent(existing.content);
           const text = existing.content.replace(/<[^>]*>/g, '');
           setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
         }
-        const critiqueRes = await apiClient.get(`/api/critiques/${existing.id}`);
-        if (critiqueRes.data.length > 0) setCritique(parseCritique(critiqueRes.data[0]));
-      });
-  }, [universityId, editor]);
+        if (existing.critiques?.length > 0) {
+          setCritique(parseCritique(existing.critiques[0]));
+          setActiveTab('critique');
+        }
+      })
+      .catch(() => navigate(`/sop/${universityId}`));
+  }, [sopId, editor]);
 
   useEffect(() => () => clearTimeout(saveTimer.current), []);
 
@@ -111,6 +145,8 @@ export default function SOPWorkshop() {
     await manualSave();
     setCritiquing(true);
     setCritiqueError('');
+    setActiveTab('critique');
+    setMobileTab('critique');
     try {
       const res = await apiClient.post('/api/critiques', { sopId: sopIdRef.current });
       setCritique(parseCritique(res.data));
@@ -118,6 +154,14 @@ export default function SOPWorkshop() {
       setCritiqueError(err.response?.data?.error || 'Failed to generate critique');
     } finally { setCritiquing(false); }
   };
+
+  const degreeLevel = university?.degreeLevel || 'masters';
+  const isUndergrad = degreeLevel === 'undergraduate';
+  const essayLabel = isUndergrad ? 'Personal Statement' : 'Statement of Purpose';
+  const target = getTarget(degreeLevel);
+  const targetPct = Math.min((wordCount / target.max) * 100, 100);
+  const inRange = wordCount >= target.min && wordCount <= target.max;
+  const wordColor = wordCount > target.max ? '#FF3B30' : inRange ? '#34C759' : wordCount >= target.min * 0.6 ? '#FF9F0A' : 'var(--text-tertiary)';
 
   if (!university) return (
     <div className="flex items-center justify-center h-full">
@@ -127,45 +171,57 @@ export default function SOPWorkshop() {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden" style={{ background: 'var(--bg)' }}>
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
-        <div className="flex items-center gap-2 md:gap-3 min-w-0">
-          <button onClick={() => navigate('/universities')}
-            className="p-1.5 rounded-lg transition-colors flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}
+
+      {/* ── Top bar ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b flex-shrink-0"
+        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button onClick={() => navigate(`/sop/${universityId}`)}
+            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
+            style={{ color: 'var(--text-tertiary)' }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
             onMouseLeave={e => e.currentTarget.style.background = ''}>
             <ChevronLeft size={16} />
           </button>
           <div className="min-w-0">
-            <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{university.name}</h1>
-            <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
-              {university.program} · {university.degreeLevel === 'undergraduate' ? 'Personal Statement' : 'Statement of Purpose'}
-            </p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{university.name}</h1>
+              <span className="hidden sm:inline text-xs px-1.5 py-0.5 rounded-md font-medium flex-shrink-0"
+                style={{ background: 'rgba(0,113,227,0.08)', color: 'var(--accent)' }}>
+                {essayLabel}
+              </span>
+            </div>
+            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{university.program}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
-          <span className="hidden sm:flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            <FileText size={11} />{wordCount} words
-          </span>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
           <SaveIndicator status={saveStatus} />
           <button onClick={manualSave}
-            className="flex items-center gap-1 px-2 md:px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
-            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
-            <Save size={11} /><span className="hidden sm:inline ml-1">Save</span>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border"
+            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-secondary)'}>
+            <Save size={12} strokeWidth={1.8} />
+            <span className="hidden sm:inline">Save</span>
           </button>
-          <button onClick={() => setShowGuide(v => !v)}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-all"
-            style={showGuide
-              ? { background: 'rgba(0,113,227,0.1)', borderColor: 'rgba(0,113,227,0.3)', color: 'var(--accent)' }
-              : { color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
-            <HelpCircle size={11} /> Guide
+          <button onClick={handleGetCritique} disabled={wordCount < 50 || critiquing}
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white transition-all"
+            style={{ background: wordCount < 50 ? 'rgba(191,90,242,0.4)' : '#BF5AF2', cursor: wordCount < 50 ? 'not-allowed' : 'pointer' }}>
+            <Sparkles size={12} strokeWidth={2} />
+            {critiquing ? 'Analysing...' : 'Get AI Critique'}
           </button>
         </div>
       </div>
 
-      {/* Mobile tab switcher */}
-      <div className="flex md:hidden border-b flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
-        {[{ id: 'editor', label: 'Editor' }, { id: 'guide', label: 'Guide' }, { id: 'critique', label: 'AI Critique' }].map(tab => (
+      {/* ── Mobile tab bar ───────────────────────────────────────────────── */}
+      <div className="flex md:hidden border-b flex-shrink-0"
+        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
+        {[
+          { id: 'editor', label: 'Write' },
+          { id: 'guide', label: 'Guide' },
+          { id: 'critique', label: 'AI Critique' },
+        ].map(tab => (
           <button key={tab.id} onClick={() => setMobileTab(tab.id)}
             className="flex-1 py-2.5 text-xs font-medium transition-all"
             style={mobileTab === tab.id
@@ -176,131 +232,212 @@ export default function SOPWorkshop() {
         ))}
       </div>
 
+      {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Editor */}
-        <div className={`flex-1 overflow-y-auto ${mobileTab !== 'editor' ? 'hidden md:block' : ''}`} style={{ background: 'var(--bg)' }}>
-          <div className="max-w-2xl mx-auto px-4 md:px-8 py-4 md:py-6">
-            <Toolbar editor={editor} />
-            <div className="card shadow-apple-sm p-4 md:p-6 mt-3 focus-within:ring-2 transition-all" style={{ '--tw-ring-color': 'rgba(0,113,227,0.3)' }}>
-              <EditorContent editor={editor} />
-            </div>
-            <div className="flex items-center justify-between mt-3">
-              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Auto-saves every 30s · v{sop?.version || 1}</p>
-              <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: wordCount >= 1000 ? '#34C759' : 'var(--text-tertiary)' }}>{wordCount}/1000</span>
-                <div className="w-24 rounded-full h-1" style={{ background: 'var(--border)' }}>
-                  <div className="h-1 rounded-full transition-all" style={{ width: `${Math.min((wordCount / 1000) * 100, 100)}%`, background: wordCount >= 800 ? '#34C759' : 'var(--accent)' }} />
-                </div>
+
+        {/* Editor column */}
+        <div className={`flex-1 overflow-y-auto min-h-0 ${mobileTab !== 'editor' ? 'hidden md:flex' : 'flex'} flex-col`}
+          style={{ background: 'var(--bg)' }}>
+          <div className="flex-1 w-full max-w-[740px] mx-auto px-4 md:px-8 py-5 flex flex-col gap-3">
+
+            {/* Toolbar */}
+            <EditorToolbar editor={editor} />
+
+            {/* Document paper */}
+            <div className="rounded-2xl shadow-apple overflow-hidden"
+              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+              <div className="px-8 md:px-12 py-10">
+                {/* Essay type label */}
+                <p className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: 'var(--text-tertiary)' }}>
+                  {essayLabel} · {university.name}
+                </p>
+                <EditorContent editor={editor} />
               </div>
             </div>
+
+            {/* Word count bar */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-semibold tabular-nums" style={{ color: wordColor }}>{wordCount}</span>
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>/ {target.label} words recommended</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-20 md:w-28 rounded-full h-1.5" style={{ background: 'var(--border)' }}>
+                  <div className="h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${targetPct}%`, background: wordColor }} />
+                </div>
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  Auto-saves every 30s
+                </span>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        {/* Guide Panel — sidebar on desktop, tab on mobile */}
-        {showGuide && (
-          <div className="hidden md:block w-64 border-l overflow-y-auto flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-              <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Writing Guide</span>
-              <button onClick={() => setShowGuide(false)} style={{ color: 'var(--text-tertiary)' }}><X size={13} /></button>
-            </div>
-            <div className="p-3 space-y-2">
-              {getGuidedQuestions(university?.degreeLevel).map(({ q, hint }, i) => (
-                <div key={i} className="p-3 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{i + 1}. {q}</p>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hint}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {mobileTab === 'guide' && (
-          <div className="md:hidden flex-1 overflow-y-auto" style={{ background: 'var(--bg-elevated)' }}>
-            <div className="p-4 space-y-3">
-              {getGuidedQuestions(university?.degreeLevel).map(({ q, hint }, i) => (
-                <div key={i} className="p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                  <p className="text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>{i + 1}. {q}</p>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hint}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* ── Right panel ──────────────────────────────────────────────── */}
+        <div className={`border-l flex-col flex-shrink-0 md:w-[340px] overflow-hidden
+          ${mobileTab === 'guide' || mobileTab === 'critique' ? 'flex max-md:flex-1' : 'hidden md:flex'}`}
+          style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
 
-        {/* Critique Panel — sidebar on desktop, tab on mobile */}
-        <div className={`border-l overflow-y-auto flex-shrink-0 flex flex-col md:w-80 ${mobileTab === 'critique' ? 'flex-1' : 'hidden md:flex'}`} style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
-          <div className="px-4 py-3 border-b flex items-center justify-between flex-shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>AI Critique</span>
-            {critique && <AssessmentBadge value={critique.overallAssessment} />}
+          {/* Panel tab bar */}
+          <div className="flex border-b flex-shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
+            {[
+              { id: 'guide', label: 'Writing Guide', icon: BookOpen },
+              { id: 'critique', label: 'AI Critique', icon: Sparkles },
+            ].map(({ id, label, icon: Icon }) => (
+              <button key={id}
+                onClick={() => { setActiveTab(id); setMobileTab(id); }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-all"
+                style={activeTab === id
+                  ? { color: 'var(--accent)', borderBottom: '2px solid var(--accent)', background: 'transparent' }
+                  : { color: 'var(--text-tertiary)', borderBottom: '2px solid transparent' }}>
+                <Icon size={12} strokeWidth={activeTab === id ? 2.2 : 1.8} />
+                {label}
+              </button>
+            ))}
           </div>
 
-          <div className="flex-1 p-4 overflow-y-auto">
-            {!critique && !critiquing && (
-              <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-8">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(191,90,242,0.1)' }}>
-                  <Sparkles size={20} style={{ color: '#BF5AF2' }} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Get AI Feedback</p>
+          {/* Panel content */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+
+            {/* Writing Guide */}
+            {activeTab === 'guide' && (
+              <div className="p-4 space-y-3">
+                <p className="text-xs px-1" style={{ color: 'var(--text-tertiary)' }}>
+                  Answer these questions to structure your {essayLabel.toLowerCase()}:
+                </p>
+                {getGuidedQuestions(degreeLevel).map(({ q, hint }, i) => (
+                  <div key={i} className="rounded-2xl p-4"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+                    <div className="flex items-start gap-2.5 mb-2">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
+                        style={{ background: 'rgba(0,113,227,0.12)', color: 'var(--accent)' }}>
+                        {i + 1}
+                      </span>
+                      <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>{q}</p>
+                    </div>
+                    <p className="text-xs leading-relaxed pl-7.5" style={{ color: 'var(--text-secondary)', paddingLeft: '29px' }}>{hint}</p>
+                  </div>
+                ))}
+                <div className="rounded-2xl p-4 mt-2" style={{ background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.12)' }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--accent)' }}>💡 Tip</p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    Write at least 50 words to get detailed feedback on authenticity, clarity, and impact.
+                    Don't try to answer every question in order. Start with what you feel most passionate about — authenticity matters more than structure.
                   </p>
                 </div>
-                {critiqueError && (
-                  <p className="text-xs px-3 py-2 rounded-xl w-full" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>{critiqueError}</p>
-                )}
-                <button onClick={handleGetCritique} disabled={wordCount < 50}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white transition-all active:scale-95 disabled:opacity-40"
-                  style={{ background: '#BF5AF2' }}>
-                  <Sparkles size={12} /> Get Critique
-                </button>
               </div>
             )}
 
-            {critiquing && (
-              <div className="flex flex-col items-center justify-center h-full gap-3">
-                <div className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#BF5AF2', borderTopColor: 'transparent' }} />
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Analysing your SOP...</p>
-              </div>
-            )}
+            {/* AI Critique */}
+            {activeTab === 'critique' && (
+              <div className="p-4">
 
-            {critique && !critiquing && (
-              <div className="space-y-4">
-                {/* AI Detection */}
-                {critique.aiLikelihood != null && (
-                  <AiDetection likelihood={critique.aiLikelihood} reasoning={critique.aiReasoning} />
+                {/* Empty state */}
+                {!critique && !critiquing && (
+                  <div className="flex flex-col items-center text-center gap-4 pt-8 pb-4">
+                    <div className="w-14 h-14 rounded-3xl flex items-center justify-center"
+                      style={{ background: 'rgba(191,90,242,0.1)' }}>
+                      <Sparkles size={24} style={{ color: '#BF5AF2' }} strokeWidth={1.6} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>Ready for feedback?</p>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                        Write at least 50 words, then get a detailed AI critique covering authenticity, clarity, and impact.
+                      </p>
+                    </div>
+                    {critiqueError && (
+                      <p className="text-xs px-3 py-2.5 rounded-xl w-full text-left"
+                        style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>
+                        {critiqueError}
+                      </p>
+                    )}
+                    <button onClick={handleGetCritique} disabled={wordCount < 50}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all active:scale-95"
+                      style={{ background: wordCount < 50 ? 'rgba(191,90,242,0.4)' : '#BF5AF2', cursor: wordCount < 50 ? 'not-allowed' : 'pointer' }}>
+                      <Sparkles size={14} strokeWidth={2} />
+                      {wordCount < 50 ? `Need ${50 - wordCount} more words` : 'Get AI Critique'}
+                    </button>
+                  </div>
                 )}
 
-                {/* Scores */}
-                <div className="p-3 rounded-xl space-y-2.5" style={{ background: 'var(--bg-secondary)' }}>
-                  {[
-                    { label: 'Authenticity', value: critique.authenticityScore },
-                    { label: 'Specificity', value: critique.specificityScore },
-                    { label: 'Clarity', value: critique.clarityScore },
-                    { label: 'Impact', value: critique.impactScore },
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>
-                        <span>{label}</span>
-                        <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{value}/10</span>
+                {/* Loading */}
+                {critiquing && (
+                  <div className="flex flex-col items-center justify-center gap-4 pt-12">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(191,90,242,0.1)' }}>
+                      <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#BF5AF2', borderTopColor: 'transparent' }} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Analysing your writing...</p>
+                      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>This takes 10–20 seconds</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Critique results */}
+                {critique && !critiquing && (
+                  <div className="space-y-4">
+
+                    {/* Overall assessment */}
+                    <div className="rounded-2xl p-4 flex items-center justify-between"
+                      style={{ background: assessmentStyle(critique.overallAssessment).bg, border: `1px solid ${assessmentStyle(critique.overallAssessment).border}` }}>
+                      <div>
+                        <p className="text-xs font-medium mb-0.5" style={{ color: assessmentStyle(critique.overallAssessment).color }}>Overall Assessment</p>
+                        <p className="text-lg font-bold capitalize" style={{ color: assessmentStyle(critique.overallAssessment).color }}>
+                          {critique.overallAssessment || '—'}
+                        </p>
                       </div>
-                      <div className="rounded-full h-1.5" style={{ background: 'var(--border)' }}>
-                        <div className="h-1.5 rounded-full transition-all" style={{ width: `${value * 10}%`, background: value >= 7 ? '#34C759' : value >= 4 ? '#FF9F0A' : '#FF3B30' }} />
+                      <div className="text-3xl font-bold tabular-nums" style={{ color: assessmentStyle(critique.overallAssessment).color }}>
+                        {overallScore(critique)}<span className="text-base font-normal opacity-60">/10</span>
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                <CritiqueSection icon={<CheckCircle size={13} />} title="Strengths" items={critique.strengths} color="#34C759" bg="rgba(52,199,89,0.08)" />
-                <CritiqueSection icon={<AlertCircle size={13} />} title="Weaknesses" items={critique.weaknesses} color="#FF9F0A" bg="rgba(255,159,10,0.08)" />
-                <CritiqueSection icon={<TrendingUp size={13} />} title="Suggestions" items={critique.suggestions} color="#0071E3" bg="rgba(0,113,227,0.08)" />
+                    {/* Score grid */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: 'Authenticity', value: critique.authenticityScore },
+                        { label: 'Specificity',  value: critique.specificityScore },
+                        { label: 'Clarity',      value: critique.clarityScore },
+                        { label: 'Impact',        value: critique.impactScore },
+                      ].map(({ label, value }) => (
+                        <ScoreCard key={label} label={label} value={value} />
+                      ))}
+                    </div>
 
-                {critiqueError && <p className="text-xs" style={{ color: '#FF3B30' }}>{critiqueError}</p>}
+                    {/* AI Detection */}
+                    {critique.aiLikelihood != null && (
+                      <AiDetection likelihood={critique.aiLikelihood} reasoning={critique.aiReasoning} />
+                    )}
 
-                <button onClick={handleGetCritique} disabled={critiquing}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all border"
-                  style={{ color: '#BF5AF2', borderColor: 'rgba(191,90,242,0.3)', background: 'rgba(191,90,242,0.06)' }}>
-                  <Sparkles size={12} /> Re-critique
-                </button>
+                    {/* Feedback sections */}
+                    <CritiqueSection
+                      icon={<CheckCircle size={13} strokeWidth={2} />}
+                      title="Strengths" items={critique.strengths}
+                      color="#34C759" bg="rgba(52,199,89,0.07)" border="rgba(52,199,89,0.15)" />
+                    <CritiqueSection
+                      icon={<AlertCircle size={13} strokeWidth={2} />}
+                      title="Areas to Improve" items={critique.weaknesses}
+                      color="#FF9F0A" bg="rgba(255,159,10,0.07)" border="rgba(255,159,10,0.15)" />
+                    <CritiqueSection
+                      icon={<TrendingUp size={13} strokeWidth={2} />}
+                      title="Suggestions" items={critique.suggestions}
+                      color="#0071E3" bg="rgba(0,113,227,0.07)" border="rgba(0,113,227,0.15)" />
+
+                    {critiqueError && (
+                      <p className="text-xs px-3 py-2 rounded-xl" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>
+                        {critiqueError}
+                      </p>
+                    )}
+
+                    <button onClick={handleGetCritique} disabled={critiquing}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all"
+                      style={{ background: 'rgba(191,90,242,0.08)', color: '#BF5AF2', border: '1px solid rgba(191,90,242,0.2)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(191,90,242,0.14)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(191,90,242,0.08)'}>
+                      <Sparkles size={12} strokeWidth={2} /> Re-analyse
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -310,30 +447,101 @@ export default function SOPWorkshop() {
   );
 }
 
-function AssessmentBadge({ value }) {
-  const config = {
-    weak: { color: '#FF3B30', bg: 'rgba(255,59,48,0.1)' },
-    good: { color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
-    strong: { color: '#34C759', bg: 'rgba(52,199,89,0.1)' },
-  };
-  const c = config[value] || config.good;
+// ─── sub-components ────────────────────────────────────────────────────────────
+
+function EditorToolbar({ editor }) {
+  if (!editor) return null;
+
+  const ToolBtn = ({ onClick, active, children, title }) => (
+    <button
+      title={title}
+      onMouseDown={e => { e.preventDefault(); onClick(); }}
+      className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
+      style={active
+        ? { background: 'var(--accent)', color: 'white' }
+        : { color: 'var(--text-secondary)' }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = ''; }}>
+      {children}
+    </button>
+  );
+
+  const Sep = () => <div className="w-px h-4 mx-0.5 flex-shrink-0" style={{ background: 'var(--border)' }} />;
+
   return (
-    <span className="text-xs px-2 py-0.5 rounded-full font-medium capitalize" style={{ color: c.color, background: c.bg }}>
-      {value}
-    </span>
+    <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-xl w-fit"
+      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+      <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold (⌘B)">
+        <Bold size={13} strokeWidth={2.5} />
+      </ToolBtn>
+      <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic (⌘I)">
+        <Italic size={13} strokeWidth={2} />
+      </ToolBtn>
+      <ToolBtn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Strikethrough">
+        <Strikethrough size={13} strokeWidth={2} />
+      </ToolBtn>
+
+      <Sep />
+
+      <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading">
+        <Heading2 size={13} strokeWidth={2} />
+      </ToolBtn>
+
+      <Sep />
+
+      <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Bullet list">
+        <List size={13} strokeWidth={2} />
+      </ToolBtn>
+      <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numbered list">
+        <ListOrdered size={13} strokeWidth={2} />
+      </ToolBtn>
+      <ToolBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} title="Quote">
+        <Quote size={13} strokeWidth={2} />
+      </ToolBtn>
+
+      <Sep />
+
+      <ToolBtn onClick={() => editor.chain().focus().undo().run()} active={false} title="Undo (⌘Z)">
+        <Undo2 size={13} strokeWidth={2} />
+      </ToolBtn>
+      <ToolBtn onClick={() => editor.chain().focus().redo().run()} active={false} title="Redo (⌘⇧Z)">
+        <Redo2 size={13} strokeWidth={2} />
+      </ToolBtn>
+    </div>
   );
 }
 
-function CritiqueSection({ icon, title, items, color, bg }) {
+function ScoreCard({ label, value }) {
+  const color = value >= 7 ? '#34C759' : value >= 4 ? '#FF9F0A' : '#FF3B30';
+  const bg = value >= 7 ? 'rgba(52,199,89,0.07)' : value >= 4 ? 'rgba(255,159,10,0.07)' : 'rgba(255,59,48,0.07)';
+  const border = value >= 7 ? 'rgba(52,199,89,0.15)' : value >= 4 ? 'rgba(255,159,10,0.15)' : 'rgba(255,59,48,0.15)';
+  return (
+    <div className="rounded-xl p-3.5 flex flex-col" style={{ background: bg, border: `1px solid ${border}` }}>
+      <span className="text-2xl font-bold tabular-nums" style={{ color }}>
+        {value}<span className="text-sm font-normal opacity-50">/10</span>
+      </span>
+      <span className="text-xs mt-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+      <div className="rounded-full h-1 mt-2" style={{ background: 'var(--border)' }}>
+        <div className="h-1 rounded-full" style={{ width: `${value * 10}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+function CritiqueSection({ icon, title, items, color, bg, border }) {
+  if (!items?.length) return null;
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-2" style={{ color }}>
+      <div className="flex items-center gap-1.5 mb-2.5" style={{ color }}>
         {icon}
         <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
       </div>
       <ul className="space-y-1.5">
-        {items?.map((item, i) => (
-          <li key={i} className="text-xs px-3 py-2 rounded-xl leading-relaxed" style={{ background: bg, color: 'var(--text-primary)' }}>{item}</li>
+        {items.map((item, i) => (
+          <li key={i} className="text-xs px-3 py-2.5 rounded-xl leading-relaxed"
+            style={{ background: bg, border: `1px solid ${border}`, color: 'var(--text-primary)' }}>
+            {item}
+          </li>
         ))}
       </ul>
     </div>
@@ -344,58 +552,57 @@ function AiDetection({ likelihood, reasoning }) {
   const isHigh = likelihood >= 70;
   const isMid = likelihood >= 40;
   const color = isHigh ? '#FF3B30' : isMid ? '#FF9F0A' : '#34C759';
-  const bg = isHigh ? 'rgba(255,59,48,0.08)' : isMid ? 'rgba(255,159,10,0.08)' : 'rgba(52,199,89,0.08)';
+  const bg = isHigh ? 'rgba(255,59,48,0.07)' : isMid ? 'rgba(255,159,10,0.07)' : 'rgba(52,199,89,0.07)';
   const border = isHigh ? 'rgba(255,59,48,0.2)' : isMid ? 'rgba(255,159,10,0.2)' : 'rgba(52,199,89,0.2)';
-  const label = isHigh ? 'Likely AI-generated' : isMid ? 'Possibly AI-assisted' : 'Likely human-written';
-
+  const label = isHigh ? 'Likely AI-generated' : isMid ? 'Possibly AI-assisted' : 'Looks human-written';
   return (
-    <div className="p-3 rounded-xl border" style={{ background: bg, borderColor: border }}>
-      <div className="flex items-center justify-between mb-1.5">
-        <p className="text-xs font-semibold" style={{ color }}>AI Detection</p>
-        <span className="text-xs font-bold" style={{ color }}>{likelihood}%</span>
+    <div className="rounded-xl p-3.5" style={{ background: bg, border: `1px solid ${border}` }}>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>AI Detection</p>
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: bg, color, border: `1px solid ${border}` }}>
+          {likelihood}% AI
+        </span>
       </div>
-      <div className="rounded-full h-1.5 mb-2" style={{ background: 'rgba(0,0,0,0.08)' }}>
+      <div className="rounded-full h-1.5 mb-2" style={{ background: 'var(--border)' }}>
         <div className="h-1.5 rounded-full transition-all" style={{ width: `${likelihood}%`, background: color }} />
       </div>
-      <p className="text-xs font-medium mb-1" style={{ color }}>{label}</p>
-      {reasoning && <p className="text-xs leading-relaxed" style={{ color, opacity: 0.8 }}>{reasoning}</p>}
+      <p className="text-xs font-medium" style={{ color }}>{label}</p>
+      {reasoning && <p className="text-xs leading-relaxed mt-1" style={{ color: 'var(--text-secondary)' }}>{reasoning}</p>}
     </div>
   );
+}
+
+function SaveIndicator({ status }) {
+  const map = {
+    saved:   { text: 'Saved',     color: '#34C759' },
+    saving:  { text: 'Saving…',   color: 'var(--text-tertiary)' },
+    unsaved: { text: 'Unsaved',   color: '#FF9F0A' },
+  };
+  const { text, color } = map[status];
+  return <span className="text-xs tabular-nums" style={{ color }}>{text}</span>;
+}
+
+// ─── helpers ───────────────────────────────────────────────────────────────────
+
+function assessmentStyle(val) {
+  return {
+    weak:   { color: '#FF3B30', bg: 'rgba(255,59,48,0.07)',  border: 'rgba(255,59,48,0.15)' },
+    good:   { color: '#FF9F0A', bg: 'rgba(255,159,10,0.07)', border: 'rgba(255,159,10,0.15)' },
+    strong: { color: '#34C759', bg: 'rgba(52,199,89,0.07)',  border: 'rgba(52,199,89,0.15)' },
+  }[val] || { color: 'var(--text-secondary)', bg: 'var(--bg-secondary)', border: 'var(--border)' };
+}
+
+function overallScore(critique) {
+  const scores = [critique.authenticityScore, critique.specificityScore, critique.clarityScore, critique.impactScore].filter(Boolean);
+  if (!scores.length) return '—';
+  return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
 }
 
 function parseCritique(raw) {
   return {
     ...raw,
-    strengths: typeof raw.strengths === 'string' ? JSON.parse(raw.strengths) : raw.strengths,
+    strengths:  typeof raw.strengths  === 'string' ? JSON.parse(raw.strengths)  : raw.strengths,
     weaknesses: typeof raw.weaknesses === 'string' ? JSON.parse(raw.weaknesses) : raw.weaknesses,
     suggestions: typeof raw.suggestions === 'string' ? JSON.parse(raw.suggestions) : raw.suggestions,
   };
-}
-
-function SaveIndicator({ status }) {
-  const map = { saved: ['Saved', '#34C759'], saving: ['Saving...', 'var(--text-tertiary)'], unsaved: ['Unsaved', '#FF9F0A'] };
-  const [text, color] = map[status];
-  return <span className="text-xs" style={{ color }}>{text}</span>;
-}
-
-function Toolbar({ editor }) {
-  if (!editor) return null;
-  const btn = (action, label, active) => (
-    <button key={label} onMouseDown={e => { e.preventDefault(); action(); }}
-      className="px-2.5 py-1 text-xs rounded-lg font-medium transition-all"
-      style={active ? { background: 'var(--accent)', color: 'white' } : { color: 'var(--text-secondary)' }}
-      onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
-      onMouseLeave={e => { if (!active) e.currentTarget.style.background = ''; }}>
-      {label}
-    </button>
-  );
-  return (
-    <div className="flex items-center gap-0.5 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-      {btn(() => editor.chain().focus().toggleBold().run(), 'B', editor.isActive('bold'))}
-      {btn(() => editor.chain().focus().toggleItalic().run(), 'I', editor.isActive('italic'))}
-      {btn(() => editor.chain().focus().toggleBulletList().run(), '• List', editor.isActive('bulletList'))}
-      {btn(() => editor.chain().focus().toggleOrderedList().run(), '1. List', editor.isActive('orderedList'))}
-      {btn(() => editor.chain().focus().toggleHeading({ level: 2 }).run(), 'H2', editor.isActive('heading', { level: 2 }))}
-    </div>
-  );
 }
