@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { ChevronLeft, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ExternalLink, Check } from 'lucide-react';
 
 const categoryConfig = {
   dream:  { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', label: 'Dream' },
@@ -28,7 +28,7 @@ const statusConfig = {
 
 function Dot({ completion }) {
   if (!completion) return <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
-  if (completion.met) return <span style={{ color: '#16A34A' }}>✓</span>;
+  if (completion.met) return <span style={{ color: '#16A34A' }}><Check size={12} /></span>;
   if (completion.partial) return <span style={{ color: '#D4A843' }}>{completion.count}/{completion.required}</span>;
   return <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
 }
@@ -223,7 +223,7 @@ export default function Compare() {
       <div className="overflow-x-auto">
         <div style={{ minWidth: `${numCols * 200 + 160}px` }}>
           {/* University header row */}
-          <div className="flex" style={{ paddingLeft: '160px' }}>
+          <div className="flex" style={{ paddingLeft: '160px', position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-elevated)' }}>
             {columns.map(col => (
               <div key={col.id} style={{ width: colWidth, minWidth: '200px' }} className="px-4 pb-4">
                 {col.loading ? (
@@ -264,7 +264,7 @@ export default function Compare() {
             }
             return (
               <div key={i} className="flex items-center py-2.5"
-                style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                style={{ borderBottom: '1px solid var(--border-subtle)', background: i % 2 === 0 ? 'rgba(0,0,0,0.02)' : undefined }}>
                 <div style={{ width: '160px', paddingRight: '16px', flexShrink: 0 }}>
                   <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{row.label}</p>
                 </div>

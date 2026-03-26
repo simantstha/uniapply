@@ -4,17 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
-  CheckCircle, Clock, AlertCircle, User, ChevronRight,
+  CheckCircle, Clock, User, ChevronRight,
   PenLine, FolderOpen, Check, Circle,
 } from 'lucide-react';
 
 const statusConfig = {
   not_started: { label: 'Not Started', color: 'var(--text-tertiary)', bg: 'var(--bg-secondary)' },
-  in_progress:  { label: 'In Progress',  color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
-  submitted:    { label: 'Submitted',    color: '#1E2D40', bg: 'rgba(30,45,64,0.08)' },
+  in_progress:  { label: 'In Progress',  color: '#D4A843', bg: 'rgba(212,168,67,0.12)' },
+  submitted:    { label: 'Submitted',    color: 'var(--text-primary)', bg: 'rgba(30,45,64,0.08)' },
   accepted:     { label: 'Accepted',     color: '#34C759', bg: 'rgba(52,199,89,0.1)' },
   rejected:     { label: 'Rejected',     color: '#FF3B30', bg: 'rgba(255,59,48,0.1)' },
-  waitlisted:   { label: 'Waitlisted',   color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
+  waitlisted:   { label: 'Waitlisted',   color: '#D4A843', bg: 'rgba(212,168,67,0.12)' },
 };
 
 const categoryConfig = {
@@ -61,7 +61,7 @@ function getJourneySteps(data) {
     {
       num: 4,
       title: 'Write your personal statement',
-      desc: 'Use the guided editor to tell your story',
+      desc: 'Select a university to open its SOP editor',
       done: (data?.sops ?? 0) > 0,
       partial: false,
       to: '/universities',
@@ -72,7 +72,7 @@ function getJourneySteps(data) {
     {
       num: 5,
       title: 'Get AI feedback',
-      desc: 'AI critiques your statement and scores it',
+      desc: 'Select a university, then open a draft to get AI feedback',
       done: (data?.critiques ?? 0) > 0,
       partial: false,
       to: '/universities',
@@ -214,7 +214,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2 md:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {[
           { label: 'Universities', value: data?.universities ?? '—', icon: Building2, color: '#C4622D', bg: 'rgba(196,98,45,0.08)', to: '/universities' },
           { label: 'Documents',    value: data?.documents    ?? '—', icon: FolderOpen, color: '#D4A843', bg: 'rgba(212,168,67,0.1)',  to: '/documents' },
@@ -361,7 +361,7 @@ export default function Dashboard() {
         <div className="card p-5 shadow-apple-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <AlertCircle size={14} style={{ color: 'var(--text-secondary)' }} strokeWidth={1.8} />
+              <Clock size={14} style={{ color: 'var(--text-secondary)' }} strokeWidth={1.8} />
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Recently Added</p>
             </div>
             <Link to="/universities" className="text-xs font-medium" style={{ color: 'var(--accent)' }}>View all</Link>

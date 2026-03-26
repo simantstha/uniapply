@@ -108,6 +108,7 @@ export default function SOPList() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
   const [activeTab, setActiveTab] = useState('sops');
   const [req, setReq] = useState({ loading: false, data: null, error: null });
 
@@ -154,7 +155,6 @@ export default function SOPList() {
   };
 
   const handleDelete = async (sopId) => {
-    if (!confirm('Delete this draft and its critique?')) return;
     await apiClient.delete(`/api/sops/${sopId}`);
     setSops(prev => prev.filter(s => s.id !== sopId));
   };
@@ -349,13 +349,35 @@ export default function SOPList() {
                           onMouseLeave={e => { if (!isBest) e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
                           <Star size={13} fill={isBest ? '#FF9F0A' : 'none'} />
                         </button>
-                        <button onClick={() => handleDelete(sop.id)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-                          style={{ background: 'rgba(255,59,48,0.06)', color: '#FF3B30' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.14)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.06)'}>
-                          <Trash2 size={13} />
-                        </button>
+                        {deletingId === sop.id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs" style={{ color: '#FF3B30' }}>Delete?</span>
+                            <button
+                              onClick={() => { handleDelete(sop.id); setDeletingId(null); }}
+                              className="text-xs px-2 py-1 rounded-md text-white"
+                              style={{ background: '#FF3B30' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.85)'}
+                              onMouseLeave={e => e.currentTarget.style.background = '#FF3B30'}>
+                              Yes
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(null)}
+                              className="text-xs px-2 py-1 rounded-md"
+                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-elevated)' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-elevated)'}>
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setDeletingId(sop.id)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                            style={{ background: 'rgba(255,59,48,0.06)', color: '#FF3B30' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.14)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.06)'}>
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
 

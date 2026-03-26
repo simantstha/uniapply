@@ -132,10 +132,10 @@ export default function Profile() {
       </div>
 
       {/* Step pills */}
-      <div className="flex items-center gap-1.5 mb-5 p-1 rounded-xl w-fit" style={{ background: 'var(--bg-secondary)' }}>
+      <div className="flex items-center gap-1.5 mb-5 p-1 rounded-xl w-full" style={{ background: 'var(--bg-secondary)' }}>
         {steps.map(s => (
           <button key={s.id} onClick={() => setStep(s.id)}
-            className="px-3 md:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+            className="flex-1 px-3 md:px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={step === s.id
               ? { background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
               : { color: 'var(--text-secondary)' }}>

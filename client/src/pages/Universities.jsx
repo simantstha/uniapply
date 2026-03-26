@@ -48,6 +48,7 @@ export default function Universities() {
   const [editForm, setEditForm] = useState(emptyForm);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchData = () => {
     apiClient.get('/api/universities').then(res => setUniversities(res.data)).finally(() => setLoading(false));
@@ -127,7 +128,6 @@ export default function Universities() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this university and all its SOPs?')) return;
     await apiClient.delete(`/api/universities/${id}`);
     fetchData();
   };
@@ -204,13 +204,35 @@ export default function Universities() {
                           title="Edit">
                           <Pencil size={13} />
                         </button>
-                        <button onClick={() => handleDelete(u.id)}
-                          className="p-1.5 rounded-lg transition-all"
-                          style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
-                          <Trash2 size={13} />
-                        </button>
+                        {deletingId === u.id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs" style={{ color: '#FF3B30' }}>Delete?</span>
+                            <button
+                              onClick={() => { handleDelete(u.id); setDeletingId(null); }}
+                              className="text-xs px-2 py-1 rounded-md text-white"
+                              style={{ background: '#FF3B30' }}
+                              onMouseEnter={e => e.currentTarget.style.background = '#D93025'}
+                              onMouseLeave={e => e.currentTarget.style.background = '#FF3B30'}>
+                              Yes
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(null)}
+                              className="text-xs px-2 py-1 rounded-md"
+                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-elevated)' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-elevated)'}>
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setDeletingId(u.id)}
+                            className="p-1.5 rounded-lg transition-all"
+                            style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
 

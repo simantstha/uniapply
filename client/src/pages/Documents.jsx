@@ -38,6 +38,7 @@ export default function Documents() {
   const [tagSelection, setTagSelection] = useState([]); // selected universityIds
   const [tagSaving, setTagSaving] = useState(false);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
   const inputRef = useRef(null);
 
   const fetchDocs = () => {
@@ -85,7 +86,6 @@ export default function Documents() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this document?')) return;
     await apiClient.delete(`/api/documents/${id}`);
     setDocs(d => d.filter(doc => doc.id !== id));
   };
@@ -221,13 +221,35 @@ export default function Documents() {
                         onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,113,227,0.08)'}>
                         <Download size={13} />
                       </button>
-                      <button onClick={() => handleDelete(doc.id)}
-                        className="p-1.5 rounded-lg transition-all"
-                        style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
-                        <Trash2 size={13} />
-                      </button>
+                      {deletingId === doc.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs" style={{ color: '#FF3B30' }}>Delete?</span>
+                          <button
+                            onClick={() => { handleDelete(doc.id); setDeletingId(null); }}
+                            className="text-xs px-2 py-1 rounded-md text-white"
+                            style={{ background: '#FF3B30' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.85)'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#FF3B30'}>
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(null)}
+                            className="text-xs px-2 py-1 rounded-md"
+                            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-elevated)' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-elevated)'}>
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setDeletingId(doc.id)}
+                          className="p-1.5 rounded-lg transition-all"
+                          style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

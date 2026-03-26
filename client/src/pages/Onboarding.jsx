@@ -52,12 +52,29 @@ const FIELDS = [
   'Education', 'Social Work', 'Communications', 'Other',
 ];
 
-const TIMELINES = [
-  { value: 'Fall 2025', label: 'Fall 2025', note: 'Applications mostly due Jan–Feb 2025' },
-  { value: 'Fall 2026', label: 'Fall 2026', note: 'Applications due Nov 2025 – Feb 2026' },
-  { value: 'Fall 2027', label: 'Fall 2027', note: 'Plenty of time to prepare' },
-  { value: 'Fall 2028', label: 'Fall 2028', note: 'Early planning — great start!' },
-];
+const buildTimelines = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const isBeforeAug = now.getMonth() < 7; // before August 1
+
+  if (isBeforeAug) {
+    return [
+      { value: `Fall ${y}`,     label: `Fall ${y}`,     note: `Applications mostly due Jan–Feb ${y}` },
+      { value: `Spring ${y+1}`, label: `Spring ${y+1}`, note: `Applications due Sep–Oct ${y}` },
+      { value: `Fall ${y+1}`,   label: `Fall ${y+1}`,   note: `Applications due Nov ${y} – Feb ${y+1}` },
+      { value: `Fall ${y+2}`,   label: `Fall ${y+2}`,   note: 'Plenty of time to prepare' },
+    ];
+  } else {
+    return [
+      { value: `Spring ${y+1}`, label: `Spring ${y+1}`, note: `Applications due Sep–Oct ${y}` },
+      { value: `Fall ${y+1}`,   label: `Fall ${y+1}`,   note: `Applications due Nov ${y} – Feb ${y+1}` },
+      { value: `Fall ${y+2}`,   label: `Fall ${y+2}`,   note: 'Plenty of time to prepare' },
+      { value: `Fall ${y+3}`,   label: `Fall ${y+3}`,   note: 'Early planning — great start!' },
+    ];
+  }
+};
+
+const TIMELINES = buildTimelines();
 
 const JOURNEY_STEPS = [
   { num: 1, title: 'Complete your profile', desc: 'Add GPA, test scores, and background info' },
@@ -159,7 +176,7 @@ export default function Onboarding() {
     <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <div className="w-8 h-8 bg-apple-blue rounded-xl flex items-center justify-center">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
           <span className="text-white text-sm font-bold">U</span>
         </div>
         <span className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>UniApply</span>
@@ -403,9 +420,7 @@ export default function Onboarding() {
 
           {step === 3 && (
             <button onClick={() => setStep(4)}
-              disabled={Object.keys(scoreErrors).length > 0}
-              className="btn-primary flex items-center gap-1.5 ml-auto"
-              style={Object.keys(scoreErrors).length > 0 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}>
+              className="btn-primary flex items-center gap-1.5 ml-auto">
               See my plan <ChevronRight size={14} />
             </button>
           )}

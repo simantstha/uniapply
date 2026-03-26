@@ -98,7 +98,7 @@ export default function SOPWorkshop() {
       setWordCount(words);
       setSaveStatus('unsaved');
       clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => autoSave(editor.getHTML()), 30000);
+      saveTimer.current = setTimeout(() => autoSave(editor.getHTML()), 3000);
     },
   });
 
@@ -251,7 +251,18 @@ export default function SOPWorkshop() {
                 <p className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: 'var(--text-tertiary)' }}>
                   {essayLabel} · {university.name}
                 </p>
-                <EditorContent editor={editor} />
+                {sop === null ? (
+                  <div className="animate-pulse space-y-3 p-6">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                  </div>
+                ) : (
+                  <EditorContent editor={editor} />
+                )}
               </div>
             </div>
 
@@ -267,7 +278,7 @@ export default function SOPWorkshop() {
                     style={{ width: `${targetPct}%`, background: wordColor }} />
                 </div>
                 <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  Auto-saves every 30s
+                  Auto-saves every 3s
                 </span>
               </div>
             </div>
