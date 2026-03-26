@@ -37,7 +37,7 @@ router.post('/signup', async (req, res) => {
 
     // Send verification email non-blocking
     const verifyUrl = `${APP_URL}/verify-email?token=${emailVerificationToken}`;
-    sendEmailVerification({ to: user.email, name: user.name, verifyUrl }).catch(() => {});
+    sendEmailVerification({ to: user.email, name: user.name, verifyUrl }).catch((e) => console.error('[email] verification failed:', e.message));
 
     res.json({
       token,
@@ -135,7 +135,7 @@ router.post('/forgot-password', async (req, res) => {
       });
 
       const resetUrl = `${APP_URL}/reset-password?token=${resetToken}`;
-      sendPasswordReset({ to: user.email, name: user.name, resetUrl }).catch(() => {});
+      sendPasswordReset({ to: user.email, name: user.name, resetUrl }).catch((e) => console.error('[email] password reset failed:', e.message));
     }
 
     res.json({ message: 'If that email exists, a reset link was sent.' });
@@ -221,7 +221,7 @@ router.post('/resend-verification', authMiddleware, async (req, res) => {
     });
 
     const verifyUrl = `${APP_URL}/verify-email?token=${emailVerificationToken}`;
-    sendEmailVerification({ to: user.email, name: user.name, verifyUrl }).catch(() => {});
+    sendEmailVerification({ to: user.email, name: user.name, verifyUrl }).catch((e) => console.error('[email] verification failed:', e.message));
 
     res.json({ message: 'Verification email sent' });
   } catch (error) {

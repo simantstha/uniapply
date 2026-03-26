@@ -1,14 +1,7 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = process.env.SMTP_FROM || 'UniApply <onboarding@resend.dev>';
 
 export async function sendPasswordReset({ to, name, resetUrl }) {
   const subject = 'Reset your UniApply password';
@@ -37,12 +30,7 @@ export async function sendPasswordReset({ to, name, resetUrl }) {
     </div>
   `;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || '"UniApply" <noreply@uniapply.com>',
-    to,
-    subject,
-    html,
-  });
+  await resend.emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendEmailVerification({ to, name, verifyUrl }) {
@@ -72,12 +60,7 @@ export async function sendEmailVerification({ to, name, verifyUrl }) {
     </div>
   `;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || '"UniApply" <noreply@uniapply.com>',
-    to,
-    subject,
-    html,
-  });
+  await resend.emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendDeadlineReminder({ to, name, universityName, program, daysLeft, deadline }) {
@@ -101,10 +84,5 @@ export async function sendDeadlineReminder({ to, name, universityName, program, 
     </div>
   `;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || '"UniApply" <noreply@uniapply.com>',
-    to,
-    subject,
-    html,
-  });
+  await resend.emails.send({ from: FROM, to, subject, html });
 }
