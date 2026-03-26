@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,29 +6,39 @@
 
 @layer base {
   :root {
-    --bg: #F5F5F7;
+    --bg: #F7F5F2;
     --bg-elevated: #FFFFFF;
-    --bg-secondary: #F5F5F7;
-    --text-primary: #1D1D1F;
-    --text-secondary: #6E6E73;
-    --text-tertiary: #AEAEB2;
-    --border: #D2D2D7;
-    --border-subtle: #E8E8ED;
-    --accent: #0071E3;
-    --accent-hover: #0077ED;
+    --bg-secondary: #EFECE8;
+    --text-primary: #1A1410;
+    --text-secondary: #6B5F54;
+    --text-tertiary: #A89D93;
+    --border: #DDD8D0;
+    --border-subtle: #EAE6E0;
+    --accent: #C4622D;
+    --accent-hover: #AD5225;
+    --accent-subtle: rgba(196, 98, 45, 0.08);
+    --gold: #D4A843;
+    --gold-subtle: rgba(212, 168, 67, 0.1);
+    --navy: #1E2D40;
+    --navy-subtle: rgba(30, 45, 64, 0.07);
   }
 
   .dark {
-    --bg: #000000;
-    --bg-elevated: #1C1C1E;
-    --bg-secondary: #2C2C2E;
-    --text-primary: #F5F5F7;
-    --text-secondary: #8E8E93;
-    --text-tertiary: #636366;
-    --border: #3A3A3C;
-    --border-subtle: #2C2C2E;
-    --accent: #0A84FF;
-    --accent-hover: #409CFF;
+    --bg: #131008;
+    --bg-elevated: #1E1A12;
+    --bg-secondary: #28231A;
+    --text-primary: #F2EDE6;
+    --text-secondary: #A89880;
+    --text-tertiary: #6B5F50;
+    --border: #3A3020;
+    --border-subtle: #2C2418;
+    --accent: #E07840;
+    --accent-hover: #E8894F;
+    --accent-subtle: rgba(224, 120, 64, 0.12);
+    --gold: #D4A843;
+    --gold-subtle: rgba(212, 168, 67, 0.12);
+    --navy: #5B8DBE;
+    --navy-subtle: rgba(91, 141, 190, 0.1);
   }
 
   * {
@@ -40,9 +50,14 @@
   body {
     background-color: var(--bg);
     color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
   }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -69,11 +84,12 @@
     background-color: var(--bg-secondary);
     border-color: var(--border);
     color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
 
   .input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+    box-shadow: 0 0 0 3px rgba(196, 98, 45, 0.12);
   }
 
   .input::placeholder {
@@ -81,8 +97,9 @@
   }
 
   .btn-primary {
-    @apply px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-all active:scale-95;
+    @apply px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95;
     background-color: var(--accent);
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
 
   .btn-primary:hover {
@@ -98,6 +115,7 @@
     color: var(--text-primary);
     border-color: var(--border);
     background-color: var(--bg-elevated);
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
 
   .btn-secondary:hover {
@@ -105,8 +123,8 @@
   }
 
   .label {
-    @apply block text-xs font-medium mb-1.5;
-    color: var(--text-secondary);
+    @apply block text-xs font-semibold mb-1.5 uppercase tracking-wide;
+    color: var(--text-tertiary);
   }
 }
 
