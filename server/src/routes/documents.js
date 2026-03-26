@@ -60,6 +60,18 @@ router.get('/', async (req, res) => {
 router.post('/', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file or unsupported type. Allowed: PDF, DOC, DOCX, JPG, PNG.' });
 
+  // Parse universityIds before saving to DB so malformed JSON returns 400, not 500
+  let universityIds = [];
+  if (req.body.universityIds) {
+    try {
+      universityIds = JSON.parse(req.body.universityIds);
+      if (!Array.isArray(universityIds)) universityIds = [];
+    } catch {
+      fs.unlink(req.file.path, () => {});
+      return res.status(400).json({ error: 'Invalid universityIds format' });
+    }
+  }
+
   try {
     const doc = await prisma.document.create({
       data: {
@@ -73,10 +85,6 @@ router.post('/', upload.single('file'), async (req, res) => {
       },
     });
     // Save university tags if provided
-    const universityIds = req.body.universityIds
-      ? JSON.parse(req.body.universityIds)
-      : [];
-
     if (universityIds.length > 0) {
       const valid = await prisma.university.findMany({
         where: { id: { in: universityIds }, userId: req.userId },
