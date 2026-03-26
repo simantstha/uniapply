@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
@@ -15,18 +15,18 @@ const degreeLevelConfig = {
 };
 
 const categoryConfig = {
-  dream:  { color: '#BF5AF2', bg: 'rgba(191,90,242,0.08)', border: '#BF5AF2', label: 'Dream' },
-  target: { color: '#0071E3', bg: 'rgba(0,113,227,0.08)', border: '#0071E3', label: 'Target' },
-  safety: { color: '#34C759', bg: 'rgba(52,199,89,0.08)', border: '#34C759', label: 'Safety' },
+  dream:  { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', border: '#7C3AED', label: 'Dream' },
+  target: { color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: '#3B82F6', label: 'Target' },
+  safety: { color: '#16A34A', bg: 'rgba(22,163,74,0.08)', border: '#16A34A', label: 'Safety' },
 };
 
 const statusConfig = {
   not_started: { label: 'Not Started', color: 'var(--text-tertiary)', bg: 'var(--bg-secondary)' },
-  in_progress:  { label: 'In Progress',  color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
-  submitted:    { label: 'Submitted',    color: '#0071E3', bg: 'rgba(0,113,227,0.1)' },
+  in_progress:  { label: 'In Progress',  color: '#D4A843', bg: 'rgba(212,168,67,0.1)' },
+  submitted:    { label: 'Submitted',    color: '#1E2D40', bg: 'rgba(30,45,64,0.08)' },
   accepted:     { label: 'Accepted',     color: '#34C759', bg: 'rgba(52,199,89,0.1)' },
   rejected:     { label: 'Rejected',     color: '#FF3B30', bg: 'rgba(255,59,48,0.1)' },
-  waitlisted:   { label: 'Waitlisted',   color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
+  waitlisted:   { label: 'Waitlisted',   color: '#D4A843', bg: 'rgba(212,168,67,0.1)' },
 };
 
 const emptyForm = {
@@ -42,6 +42,10 @@ export default function Universities() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [editingUniversity, setEditingUniversity] = useState(null);
+  const [editForm, setEditForm] = useState(emptyForm);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   const fetchData = () => {
     apiClient.get('/api/universities').then(res => setUniversities(res.data)).finally(() => setLoading(false));
@@ -50,6 +54,7 @@ export default function Universities() {
   useEffect(() => { fetchData(); }, []);
 
   const set = field => e => setForm(f => ({ ...f, [field]: e.target.value }));
+  const setEdit = field => e => setEditForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -67,6 +72,43 @@ export default function Universities() {
       setError(err.response?.data?.error || 'Failed to add university');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openEdit = (u) => {
+    setEditingUniversity(u);
+    setEditForm({
+      name: u.name,
+      program: u.program,
+      degreeLevel: u.degreeLevel,
+      websiteUrl: u.websiteUrl || '',
+      category: u.category,
+      applicationDeadline: u.applicationDeadline
+        ? new Date(u.applicationDeadline).toISOString().split('T')[0]
+        : '',
+      status: u.status,
+      notes: u.notes || '',
+    });
+    setEditError('');
+  };
+
+  const closeEdit = () => { setEditingUniversity(null); setEditError(''); };
+
+  const handleEditSave = async (e) => {
+    e.preventDefault();
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const payload = { ...editForm };
+      if (!payload.applicationDeadline) delete payload.applicationDeadline;
+      else payload.applicationDeadline = new Date(payload.applicationDeadline).toISOString();
+      const res = await apiClient.put(`/api/universities/${editingUniversity.id}`, payload);
+      setUniversities(prev => prev.map(x => x.id === editingUniversity.id ? res.data : x));
+      closeEdit();
+    } catch (err) {
+      setEditError(err.response?.data?.error || 'Failed to save changes');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -124,47 +166,57 @@ export default function Universities() {
             const dl = degreeLevelConfig[u.degreeLevel] || degreeLevelConfig.masters;
             return (
               <div key={u.id} className="card shadow-apple-sm hover:shadow-apple transition-all flex flex-col overflow-hidden">
-                <div className="h-1 w-full flex-shrink-0" style={{ background: cat.border }} />
-                <div className="p-5 flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</h3>
-                      <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{u.program}</p>
+                  <div className="h-1 w-full flex-shrink-0" style={{ background: cat.border }} />
+                  <div className="p-5 flex-1">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</h3>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{u.program}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => openEdit(u)}
+                          className="p-1.5 rounded-lg transition-all"
+                          style={{ color: 'var(--text-tertiary)' }}
+                          onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                          title="Edit">
+                          <Pencil size={13} />
+                        </button>
+                        <button onClick={() => handleDelete(u.id)}
+                          className="p-1.5 rounded-lg transition-all"
+                          style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
-                    <button onClick={() => handleDelete(u.id)}
-                      className="flex-shrink-0 p-1.5 rounded-lg transition-all"
-                      style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.18)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.08)'}>
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-wrap mb-3">
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: dl.bg, color: dl.color }}>{dl.label}</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: stat.bg, color: stat.color }}>{stat.label}</span>
-                  </div>
-
-                  {u.applicationDeadline && (
-                    <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                      <Calendar size={11} />
-                      {new Date(u.applicationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <div className="flex items-center gap-2 flex-wrap mb-3">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: dl.bg, color: dl.color }}>{dl.label}</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: stat.bg, color: stat.color }}>{stat.label}</span>
                     </div>
-                  )}
-                  {u.websiteUrl && (
-                    <a href={u.websiteUrl} target="_blank" rel="noreferrer"
-                      className="flex items-center gap-1 text-xs" style={{ color: 'var(--accent)' }}>
-                      <ExternalLink size={11} /> Visit website
-                    </a>
-                  )}
-                </div>
+
+                    {u.applicationDeadline && (
+                      <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                        <Calendar size={11} />
+                        {new Date(u.applicationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    )}
+                    {u.websiteUrl && (
+                      <a href={u.websiteUrl} target="_blank" rel="noreferrer"
+                        className="flex items-center gap-1 text-xs" style={{ color: 'var(--accent)' }}>
+                        <ExternalLink size={11} /> Visit website
+                      </a>
+                    )}
+                  </div>
 
                 <div className="px-5 pb-5">
-                  <Link to={`/sop/${u.id}`} className="btn-primary w-full flex items-center justify-center gap-2 py-2">
-                    <PenLine size={12} strokeWidth={2} /> Write SOP
-                  </Link>
-                </div>
+                    <Link to={`/sop/${u.id}`} className="btn-primary w-full flex items-center justify-center gap-2 py-2">
+                      <PenLine size={12} strokeWidth={2} /> Open
+                    </Link>
+                  </div>
               </div>
             );
           })}
@@ -240,6 +292,92 @@ export default function Universities() {
                 <div className="flex gap-2 pt-1">
                   <button type="button" onClick={closeModal} className="btn-secondary flex-1">Cancel</button>
                   <button type="submit" disabled={saving} className="btn-primary flex-1">{saving ? 'Adding...' : 'Add'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit University Modal */}
+      {editingUniversity && (
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+          <div className="card shadow-apple-lg w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl rounded-b-none sm:rounded-b-2xl overflow-y-auto"
+            style={{ maxHeight: '90vh' }}>
+            <div className="p-5 md:p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Edit University</h2>
+                <button onClick={closeEdit}
+                  className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-tertiary)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                  onMouseLeave={e => e.currentTarget.style.background = ''}>
+                  <X size={15} />
+                </button>
+              </div>
+
+              {editError && (
+                <div className="mb-4 px-3.5 py-2.5 rounded-xl text-xs" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.2)' }}>
+                  {editError}
+                </div>
+              )}
+
+              <form onSubmit={handleEditSave} className="space-y-3">
+                <div>
+                  <label className="label">University Name *</label>
+                  <input value={editForm.name} onChange={setEdit('name')} required className="input" />
+                </div>
+
+                <MField label="Program *" value={editForm.program} onChange={setEdit('program')} required placeholder="e.g. BS Computer Science" />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Degree Level *</label>
+                    <select value={editForm.degreeLevel} onChange={setEdit('degreeLevel')} className="input">
+                      <option value="undergraduate">Undergraduate</option>
+                      <option value="masters">Master's</option>
+                      <option value="phd">PhD</option>
+                      <option value="certificate">Certificate</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Category *</label>
+                    <select value={editForm.category} onChange={setEdit('category')} className="input">
+                      <option value="dream">Dream</option>
+                      <option value="target">Target</option>
+                      <option value="safety">Safety</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">Status</label>
+                  <select value={editForm.status} onChange={setEdit('status')} className="input">
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="waitlisted">Waitlisted</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">Deadline</label>
+                  <input type="date" value={editForm.applicationDeadline} onChange={setEdit('applicationDeadline')} className="input" />
+                </div>
+
+                <MField label="Website" value={editForm.websiteUrl} onChange={setEdit('websiteUrl')} placeholder="https://..." />
+
+                <div>
+                  <label className="label">Notes</label>
+                  <textarea value={editForm.notes} onChange={setEdit('notes')} rows={2} placeholder="Any notes..." className="input resize-none" />
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={closeEdit} className="btn-secondary flex-1">Cancel</button>
+                  <button type="submit" disabled={editSaving} className="btn-primary flex-1">{editSaving ? 'Saving...' : 'Save Changes'}</button>
                 </div>
               </form>
             </div>
@@ -341,3 +479,4 @@ function MField({ label, value, onChange, placeholder, required }) {
     </div>
   );
 }
+
