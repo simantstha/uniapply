@@ -8,6 +8,10 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Universities from './pages/Universities';
 import SOPWorkshop from './pages/SOPWorkshop';
+import SOPList from './pages/SOPList';
+import Documents from './pages/Documents';
+import Onboarding from './pages/Onboarding';
+import Compare from './pages/Compare';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -16,7 +20,9 @@ function PrivateRoute({ children }) {
       <div className="w-6 h-6 border-2 border-apple-blue border-t-transparent rounded-full animate-spin" />
     </div>
   );
-  return user ? children : <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.onboardingCompleted) return <Navigate to="/onboarding" replace />;
+  return children;
 }
 
 function App() {
@@ -27,6 +33,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginForm />} />
             <Route path="/signup" element={<SignupForm />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/" element={
               <PrivateRoute>
                 <Layout />
@@ -36,7 +43,10 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="profile" element={<Profile />} />
               <Route path="universities" element={<Universities />} />
-              <Route path="sop/:universityId" element={<SOPWorkshop />} />
+              <Route path="documents" element={<Documents />} />
+              <Route path="sop/:universityId" element={<SOPList />} />
+              <Route path="sop/:universityId/:sopId" element={<SOPWorkshop />} />
+              <Route path="compare" element={<Compare />} />
             </Route>
           </Routes>
         </Router>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
@@ -35,6 +35,8 @@ const emptyForm = {
 };
 
 export default function Universities() {
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState(new Set());
   const [universities, setUniversities] = useState([]);
   const [filter, setFilter] = useState('all');
   const [showModal, setShowModal] = useState(false);
@@ -94,6 +96,18 @@ export default function Universities() {
 
   const closeEdit = () => { setEditingUniversity(null); setEditError(''); };
 
+  const toggleSelect = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < 4) {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   const handleEditSave = async (e) => {
     e.preventDefault();
     setEditSaving(true);
@@ -130,7 +144,7 @@ export default function Universities() {
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Universities</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{universities.length} added</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-1.5">
+        <button onClick={() => { setShowModal(true); setSelected(new Set()); }} className="btn-primary flex items-center gap-1.5">
           <Plus size={14} strokeWidth={2.5} />
           <span className="hidden sm:inline">Add University</span>
           <span className="sm:hidden">Add</span>
@@ -174,6 +188,14 @@ export default function Universities() {
                         <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{u.program}</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => toggleSelect(u.id)}
+                          className="p-1.5 rounded-lg transition-all"
+                          style={{ color: selected.has(u.id) ? 'var(--accent)' : 'var(--text-tertiary)' }}
+                          title={selected.has(u.id) ? 'Deselect' : selected.size >= 4 ? 'Max 4 selected' : 'Select for comparison'}
+                          disabled={!selected.has(u.id) && selected.size >= 4}>
+                          {selected.has(u.id) ? <CheckSquare size={13} /> : <Square size={13} />}
+                        </button>
                         <button onClick={() => openEdit(u)}
                           className="p-1.5 rounded-lg transition-all"
                           style={{ color: 'var(--text-tertiary)' }}
@@ -296,6 +318,28 @@ export default function Universities() {
               </form>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating compare bar */}
+      {selected.size >= 2 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-apple-lg"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            {selected.size} selected
+          </span>
+          <button
+            onClick={() => navigate(`/compare?ids=${[...selected].join(',')}`)}
+            className="btn-primary flex items-center gap-2 py-1.5 px-4">
+            <GitCompareArrows size={14} />
+            Compare
+          </button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="p-1.5 rounded-lg"
+            style={{ color: 'var(--text-tertiary)' }}>
+            <X size={14} />
+          </button>
         </div>
       )}
 
