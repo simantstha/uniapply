@@ -12,11 +12,15 @@ model User {
   email         String    @unique
   passwordHash  String    @map("password_hash")
   name          String
-  plan                String    @default("free")
-  planExpiresAt       DateTime? @map("plan_expires_at")
-  onboardingCompleted Boolean   @default(false) @map("onboarding_completed")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  plan                    String    @default("free")
+  planExpiresAt           DateTime? @map("plan_expires_at")
+  onboardingCompleted     Boolean   @default(false) @map("onboarding_completed")
+  resetToken              String?   @map("reset_token")
+  resetTokenExpiry        DateTime? @map("reset_token_expiry")
+  emailVerified           Boolean   @default(false) @map("email_verified")
+  emailVerificationToken  String?   @map("email_verification_token")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
   profile      Profile?
   universities University[]

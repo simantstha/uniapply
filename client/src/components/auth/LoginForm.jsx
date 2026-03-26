@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
@@ -12,6 +12,8 @@ export default function LoginForm() {
   const { login } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = location.state?.successMessage;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,6 +46,11 @@ export default function LoginForm() {
         </div>
 
         <div className="card p-6 shadow-apple">
+          {successMessage && (
+            <div className="mb-4 px-3.5 py-2.5 rounded-xl text-sm" style={{ background: 'rgba(52,199,89,0.08)', color: '#34C759', border: '1px solid rgba(52,199,89,0.2)' }}>
+              {successMessage}
+            </div>
+          )}
           {error && (
             <div className="mb-4 px-3.5 py-2.5 rounded-xl text-sm" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.2)' }}>
               {error}
@@ -64,6 +71,11 @@ export default function LoginForm() {
             <button type="submit" disabled={loading} className="btn-primary w-full mt-1">
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
+            <div className="text-center mt-2">
+              <Link to="/forgot-password" className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                Forgot password?
+              </Link>
+            </div>
           </form>
         </div>
 

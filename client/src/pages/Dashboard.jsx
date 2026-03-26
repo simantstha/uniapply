@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { getUpcomingMilestones } from './Timeline';
+import ErrorCard from '../components/ErrorCard';
 import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
   CheckCircle, Clock, User, ChevronRight,
-  PenLine, FolderOpen, Check, Circle, CalendarClock,
+  PenLine, FolderOpen, Check, Circle, CalendarClock, X, Mail,
 } from 'lucide-react';
 
 const statusConfig = {
@@ -87,11 +88,36 @@ function getJourneySteps(data) {
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [error, setError] = useState(false);
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [upcomingMilestones] = useState(() => getUpcomingMilestones(3));
+  const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
+  const handleResendVerification = async () => {
+    setResendingVerification(true);
+    try {
+      await apiClient.post('/api/auth/resend-verification');
+      setResendSuccess(true);
+    } catch {
+      // Silently fail — banner stays
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
+  const showVerificationBanner = user && !user.emailVerified && !verificationBannerDismissed;
+
+  const fetchStats = () => {
+    setError(false);
+    apiClient.get('/api/dashboard/stats')
+      .then(res => setData(res.data))
+      .catch(() => setError(true));
+  };
 
   useEffect(() => {
-    apiClient.get('/api/dashboard/stats').then(res => setData(res.data)).catch(() => {});
+    fetchStats();
   }, []);
 
   const memberSince = user?.createdAt
@@ -104,6 +130,39 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 md:p-8 max-w-5xl space-y-4">
+
+      {/* Email verification banner */}
+      {showVerificationBanner && (
+        <div className="rounded-xl px-4 py-3 flex items-center gap-3 relative"
+          style={{ background: 'rgba(212,168,67,0.12)', border: '1px solid rgba(212,168,67,0.3)' }}>
+          <Mail size={15} style={{ color: '#D4A843', flexShrink: 0 }} strokeWidth={1.8} />
+          <div className="flex-1 min-w-0">
+            {resendSuccess ? (
+              <p className="text-sm" style={{ color: '#1E2D40' }}>
+                Verification email sent! Check your inbox.
+              </p>
+            ) : (
+              <p className="text-sm" style={{ color: '#1E2D40' }}>
+                Please verify your email address.{' '}
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resendingVerification}
+                  className="font-semibold underline underline-offset-2 disabled:opacity-60"
+                  style={{ color: '#C4622D', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  {resendingVerification ? 'Sending...' : 'Resend verification email'}
+                </button>
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setVerificationBannerDismissed(true)}
+            className="flex-shrink-0 p-1 rounded-lg transition-opacity hover:opacity-60"
+            style={{ color: '#D4A843', background: 'none', border: 'none', cursor: 'pointer' }}
+            aria-label="Dismiss">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Hero */}
       <div className="card p-5 shadow-apple-sm flex items-center justify-between overflow-hidden relative"
@@ -131,6 +190,11 @@ export default function Dashboard() {
           {user?.name?.charAt(0).toUpperCase()}
         </div>
       </div>
+
+      {/* Error state */}
+      {error && (
+        <ErrorCard message="Couldn't load your stats" onRetry={fetchStats} />
+      )}
 
       {/* Journey Panel */}
       <div className="card shadow-apple-sm overflow-hidden">

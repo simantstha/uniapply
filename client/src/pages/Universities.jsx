@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
+import ErrorCard from '../components/ErrorCard';
 import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 
@@ -59,6 +60,7 @@ export default function Universities() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [editingUniversity, setEditingUniversity] = useState(null);
   const [editForm, setEditForm] = useState(emptyForm);
   const [editSaving, setEditSaving] = useState(false);
@@ -68,7 +70,12 @@ export default function Universities() {
   const [bannerDismissed, setBannerDismissed] = useState(() => localStorage.getItem(PHD_BANNER_KEY) === 'true');
 
   const fetchData = () => {
-    apiClient.get('/api/universities').then(res => setUniversities(res.data)).finally(() => setLoading(false));
+    setFetchError(false);
+    setLoading(true);
+    apiClient.get('/api/universities')
+      .then(res => setUniversities(res.data))
+      .catch(() => setFetchError(true))
+      .finally(() => setLoading(false));
     apiClient.get('/api/universities/fit-scores').then(res => setFitScores(res.data.scores || {})).catch(() => {});
   };
 
@@ -211,9 +218,15 @@ export default function Universities() {
         <div className="flex items-center justify-center h-40">
           <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'transparent' }} />
         </div>
+      ) : fetchError ? (
+        <ErrorCard message="Couldn't load universities" onRetry={fetchData} />
+      ) : filtered.length === 0 && universities.length === 0 ? (
+        <div className="card p-12 text-center shadow-apple-sm">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>No universities added yet. Start by searching for programs above.</p>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center shadow-apple-sm">
-          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No universities yet. Add one to get started.</p>
+          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No universities in this category.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

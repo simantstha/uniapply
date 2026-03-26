@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/client';
+import ErrorCard from '../components/ErrorCard';
 import { Upload, FileText, Trash2, Download, File, Image, X, Tags, UserCheck, Plus, ChevronDown, Mail } from 'lucide-react';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
@@ -55,7 +56,9 @@ function formatDeadline(deadline) {
 export default function Documents() {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
@@ -80,7 +83,12 @@ export default function Documents() {
   const [emailModal, setEmailModal] = useState(null); // { lorId, recommenderName, email, loading, error }
 
   const fetchDocs = () => {
-    apiClient.get('/api/documents').then(res => setDocs(res.data)).finally(() => setLoading(false));
+    setFetchError(false);
+    setLoading(true);
+    apiClient.get('/api/documents')
+      .then(res => setDocs(res.data))
+      .catch(() => setFetchError(true))
+      .finally(() => setLoading(false));
   };
 
   const fetchLors = () => {
@@ -111,6 +119,7 @@ export default function Documents() {
     if (!pendingFile) return;
     setUploading(true);
     setError('');
+    setUploadError('');
     try {
       const fd = new FormData();
       fd.append('file', pendingFile);
@@ -122,7 +131,9 @@ export default function Documents() {
       setPendingFile(null);
       fetchDocs();
     } catch (err) {
-      setError(err.response?.data?.error || 'Upload failed');
+      const errorMsg = err.response?.data?.error || 'Upload failed';
+      setError(errorMsg);
+      setUploadError(errorMsg);
     } finally {
       setUploading(false);
     }
@@ -510,16 +521,25 @@ export default function Documents() {
         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
         onChange={e => handleFiles(e.target.files)} />
 
+      {/* Upload error */}
+      {uploadError && (
+        <div className="mb-6 px-4 py-3 rounded-xl text-xs" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.2)' }}>
+          {uploadError}
+        </div>
+      )}
+
       {/* Document list */}
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
         </div>
+      ) : fetchError ? (
+        <ErrorCard message="Couldn't load documents" onRetry={fetchDocs} />
       ) : docs.length === 0 ? (
         <div className="card p-10 text-center shadow-apple-sm">
           <File size={28} className="mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} />
-          <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No documents yet</p>
-          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Upload your transcripts, test scores, and recommendation letters</p>
+          <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No documents uploaded yet</p>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Upload your transcripts, test scores, and other application materials</p>
         </div>
       ) : (
         <div className="space-y-5">

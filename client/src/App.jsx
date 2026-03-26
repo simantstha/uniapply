@@ -14,6 +14,9 @@ import Onboarding from './pages/Onboarding';
 import Compare from './pages/Compare';
 import ReviewPage from './pages/ReviewPage';
 import Timeline from './pages/Timeline';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -37,6 +40,9 @@ function App() {
             <Route path="/signup" element={<SignupForm />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/review/:token" element={<ReviewPage />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/" element={
               <PrivateRoute>
                 <Layout />
