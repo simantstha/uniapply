@@ -3,6 +3,13 @@ import { useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { ChevronLeft, ExternalLink, Check } from 'lucide-react';
 
+const fitConfig = {
+  strong:     { label: 'Strong Fit',  bg: 'rgba(52,199,89,0.1)',   color: '#34C759' },
+  borderline: { label: 'Borderline',  bg: 'rgba(212,168,67,0.12)', color: '#D4A843' },
+  reach:      { label: 'Reach',       bg: 'rgba(255,59,48,0.1)',   color: '#FF3B30' },
+  unknown:    { label: 'Fit Unknown', bg: 'rgba(0,0,0,0.05)',      color: 'var(--text-tertiary)' },
+};
+
 const categoryConfig = {
   dream:  { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', label: 'Dream' },
   target: { color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', label: 'Target' },
@@ -45,9 +52,11 @@ export default function Compare() {
   const ids = (searchParams.get('ids') || '').split(',').map(Number).filter(Boolean).slice(0, 4);
 
   const [columns, setColumns] = useState([]);
+  const [fitScores, setFitScores] = useState({});
 
   useEffect(() => {
     if (!ids.length) return;
+    apiClient.get('/api/universities/fit-scores').then(res => setFitScores(res.data.scores || {})).catch(() => {});
     setColumns(ids.map(id => ({ id, uni: null, req: null, loading: true, error: null })));
     ids.forEach(id => {
       Promise.all([
@@ -84,6 +93,19 @@ export default function Compare() {
   const colWidth = `${Math.floor(100 / numCols)}%`;
 
   const rows = [
+    {
+      label: 'Fit Score',
+      render: (col) => {
+        if (col.loading) return <Cell loading />;
+        const fitKey = fitScores[col.id] || 'unknown';
+        const fit = fitConfig[fitKey] || fitConfig.unknown;
+        return (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: fit.bg, color: fit.color }}>
+            {fit.label}
+          </span>
+        );
+      },
+    },
     {
       label: 'Program',
       render: (col) => <Cell loading={col.loading} value={col.uni?.program} />,

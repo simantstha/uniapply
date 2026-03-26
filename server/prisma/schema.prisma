@@ -69,6 +69,10 @@ model University {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
+  reminder30SentAt  DateTime? @map("reminder_30_sent_at")
+  reminder14SentAt  DateTime? @map("reminder_14_sent_at")
+  reminder7SentAt   DateTime? @map("reminder_7_sent_at")
+
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   sops         SOP[]
   documentTags DocumentTag[]

@@ -6,6 +6,13 @@ import { searchUniversities } from '../data/usUniversities';
 
 const CATEGORIES = ['all', 'dream', 'target', 'safety'];
 
+const fitConfig = {
+  strong:     { label: 'Strong Fit',  bg: 'rgba(52,199,89,0.1)',   color: '#34C759' },
+  borderline: { label: 'Borderline',  bg: 'rgba(212,168,67,0.12)', color: '#D4A843' },
+  reach:      { label: 'Reach',       bg: 'rgba(255,59,48,0.1)',   color: '#FF3B30' },
+  unknown:    { label: 'Fit Unknown', bg: 'rgba(0,0,0,0.05)',      color: 'var(--text-tertiary)' },
+};
+
 const degreeLevelConfig = {
   undergraduate: { label: 'Undergrad',    color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)' },
   masters:       { label: "Master's",     color: '#0071E3', bg: 'rgba(0,113,227,0.1)' },
@@ -49,9 +56,11 @@ export default function Universities() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+  const [fitScores, setFitScores] = useState({});
 
   const fetchData = () => {
     apiClient.get('/api/universities').then(res => setUniversities(res.data)).finally(() => setLoading(false));
+    apiClient.get('/api/universities/fit-scores').then(res => setFitScores(res.data.scores || {})).catch(() => {});
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -178,6 +187,8 @@ export default function Universities() {
             const cat = categoryConfig[u.category];
             const stat = statusConfig[u.status];
             const dl = degreeLevelConfig[u.degreeLevel] || degreeLevelConfig.masters;
+            const fitKey = fitScores[u.id] || 'unknown';
+            const fit = fitConfig[fitKey] || fitConfig.unknown;
             return (
               <div key={u.id} className="card shadow-apple-sm hover:shadow-apple transition-all flex flex-col overflow-hidden">
                   <div className="h-1 w-full flex-shrink-0" style={{ background: cat.border }} />
@@ -186,6 +197,11 @@ export default function Universities() {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</h3>
                         <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{u.program}</p>
+                        {fitKey !== 'unknown' && (
+                          <span className="inline-block mt-1.5 text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: fit.bg, color: fit.color }}>
+                            {fit.label}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button

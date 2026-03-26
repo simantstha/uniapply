@@ -10,14 +10,16 @@ import dashboardRoutes from './routes/dashboard.js';
 import collegeSearchRoutes from './routes/collegeSearch.js';
 import documentsRoutes from './routes/documents.js';
 import requirementsRoutes from './routes/requirements.js';
+import { startDeadlineReminders } from './jobs/deadlineReminders.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const allowedOrigins = (process.env.CLIENT_URL || '').split(',').map(o => o.trim());
 app.use(cors({
-  origin: process.env.CLIENT_URL,
+  origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)),
   credentials: true,
 }));
 app.use(express.json());
@@ -37,3 +39,5 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+startDeadlineReminders();
