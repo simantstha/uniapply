@@ -27,7 +27,7 @@ router.post('/signup', async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, plan: user.plan } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, plan: user.plan, onboardingCompleted: user.onboardingCompleted } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -47,7 +47,7 @@ router.post('/login', async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, plan: user.plan } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, plan: user.plan, onboardingCompleted: user.onboardingCompleted } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -57,9 +57,18 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { id: true, email: true, name: true, plan: true, createdAt: true },
+      select: { id: true, email: true, name: true, plan: true, createdAt: true, onboardingCompleted: true },
     });
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/onboarding', authMiddleware, async (req, res) => {
+  try {
+    await prisma.user.update({ where: { id: req.userId }, data: { onboardingCompleted: true } });
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

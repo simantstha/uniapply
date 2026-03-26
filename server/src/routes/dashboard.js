@@ -9,10 +9,11 @@ router.use(authMiddleware);
 
 router.get('/stats', async (req, res) => {
   try {
-    const [universities, sops, critiques, profile, recentUniversities, allUniversities] = await Promise.all([
+    const [universities, sops, critiques, documents, profile, recentUniversities, allUniversities] = await Promise.all([
       prisma.university.count({ where: { userId: req.userId } }),
       prisma.sOP.count({ where: { userId: req.userId, wordCount: { gt: 0 } } }),
       prisma.sOPCritique.count({ where: { sop: { userId: req.userId } } }),
+      prisma.document.count({ where: { userId: req.userId } }),
       prisma.profile.findUnique({ where: { userId: req.userId } }),
       prisma.university.findMany({
         where: { userId: req.userId },
@@ -48,7 +49,7 @@ router.get('/stats', async (req, res) => {
     }, {});
 
     res.json({
-      universities, sops, critiques,
+      universities, sops, critiques, documents,
       profileCompletion,
       recentUniversities,
       upcomingDeadlines,

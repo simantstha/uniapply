@@ -15,7 +15,10 @@ router.get('/', async (req, res) => {
     const sops = await prisma.sOP.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
-      include: { university: { select: { name: true, program: true } } },
+      include: {
+        university: { select: { name: true, program: true } },
+        critiques: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
     });
     res.json(sops);
   } catch (error) {
@@ -27,6 +30,13 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { universityId, title, content = '' } = req.body;
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (user.plan === 'free') {
+      const count = await prisma.sOP.count({ where: { userId: req.userId, universityId: parseInt(universityId) } });
+      if (count >= 1) {
+        return res.status(403).json({ error: 'Free plan: 1 draft per university. Upgrade to Student or Premium for unlimited drafts.' });
+      }
+    }
     const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
     const sop = await prisma.sOP.create({
       data: { universityId: parseInt(universityId), userId: req.userId, title, content, wordCount, version: 1 },
@@ -74,6 +84,22 @@ router.put('/:id', async (req, res) => {
     if (updated.count === 0) return res.status(404).json({ error: 'Not found' });
     const sop = await prisma.sOP.findUnique({ where: { id: parseInt(req.params.id) } });
     res.json(sop);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark as best / final — resets others for same university
+router.patch('/:id/final', async (req, res) => {
+  try {
+    const sop = await prisma.sOP.findFirst({ where: { id: parseInt(req.params.id), userId: req.userId } });
+    if (!sop) return res.status(404).json({ error: 'Not found' });
+    await prisma.sOP.updateMany({
+      where: { userId: req.userId, universityId: sop.universityId, id: { not: sop.id } },
+      data: { status: 'draft' },
+    });
+    const updated = await prisma.sOP.update({ where: { id: sop.id }, data: { status: 'final' } });
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
