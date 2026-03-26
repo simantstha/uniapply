@@ -124,6 +124,102 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.get('/:id/checklist', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.userId;
+
+    // 1. Fetch the university (scoped to user)
+    const university = await prisma.university.findFirst({ where: { id, userId } });
+    if (!university) return res.status(404).json({ error: 'Not found' });
+
+    // 2. Fetch all SOPs for this university
+    const sops = await prisma.sOP.findMany({
+      where: { universityId: id, userId },
+      include: { critiques: { take: 1, orderBy: { createdAt: 'desc' } } },
+    });
+
+    // 3. Fetch documents tagged to this university
+    const docTags = await prisma.documentTag.findMany({
+      where: { universityId: id },
+      include: { document: true },
+    });
+    // Only count docs belonging to this user
+    const userDocs = docTags.filter(t => t.document.userId === userId).map(t => t.document);
+
+    // 4. Fetch LORs for this university
+    const allLors = await prisma.letterOfRecommendation.findMany({ where: { userId } });
+    const universityLors = allLors.filter(lor => {
+      try {
+        const ids = JSON.parse(lor.universityIds || '[]');
+        return Array.isArray(ids) && ids.includes(id);
+      } catch {
+        return false;
+      }
+    });
+
+    // 5. Fetch cached requirements for lor_count
+    const cachedReqs = await prisma.universityRequirements.findFirst({
+      where: { universityName: university.name, program: university.program },
+    });
+    let lorRequired = 2; // default
+    if (cachedReqs) {
+      try {
+        const parsed = JSON.parse(cachedReqs.requirementsJson);
+        if (parsed.lor_count != null) lorRequired = parsed.lor_count;
+      } catch { /* keep default */ }
+    }
+
+    // --- Evaluate each checklist item ---
+
+    // SOP
+    const hasFinalSop = sops.some(s => s.status === 'final');
+    let sopStatus = 'missing';
+    let sopDetail = null;
+    if (hasFinalSop) {
+      sopStatus = 'complete';
+      sopDetail = `${sops.length} draft${sops.length !== 1 ? 's' : ''} · best selected`;
+    } else if (sops.length > 0) {
+      sopStatus = 'in_progress';
+      sopDetail = `${sops.length} draft${sops.length !== 1 ? 's' : ''} · not finalised`;
+    }
+
+    // LORs
+    const submittedLors = universityLors.filter(l => l.status === 'submitted').length;
+    let lorStatus = 'missing';
+    let lorDetail = `${submittedLors}/${lorRequired} submitted`;
+    if (submittedLors >= lorRequired) {
+      lorStatus = 'complete';
+    } else if (universityLors.length > 0) {
+      lorStatus = 'in_progress';
+    }
+
+    // Document-based items
+    const hasDocType = (type) => userDocs.some(d => d.docType === type);
+
+    const transcriptStatus  = hasDocType('transcript')  ? 'complete' : 'missing';
+    const testScoresStatus  = hasDocType('test_scores') ? 'complete' : 'missing';
+    const financialStatus   = hasDocType('financial')   ? 'complete' : 'missing';
+    const resumeStatus      = hasDocType('resume')      ? 'complete' : 'missing';
+
+    const checklist = [
+      { item: 'Statement of Purpose',  status: sopStatus,        detail: sopDetail },
+      { item: 'Recommendation Letters', status: lorStatus,        detail: lorDetail },
+      { item: 'Transcript',            status: transcriptStatus, detail: transcriptStatus === 'complete' ? 'uploaded' : null },
+      { item: 'Test Scores',           status: testScoresStatus, detail: testScoresStatus === 'complete' ? 'uploaded' : null },
+      { item: 'Financial Documents',   status: financialStatus,  detail: financialStatus === 'complete' ? 'uploaded' : null },
+      { item: 'Resume / CV',           status: resumeStatus,     detail: resumeStatus === 'complete' ? 'uploaded' : null },
+    ];
+
+    const completeCount = checklist.filter(c => c.status === 'complete').length;
+    const percentReady = Math.round((completeCount / checklist.length) * 100);
+
+    res.json({ checklist, percentReady });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const university = await prisma.university.updateMany({

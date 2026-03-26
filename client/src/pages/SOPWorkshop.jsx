@@ -6,7 +6,7 @@ import apiClient from '../api/client';
 import {
   ChevronLeft, Sparkles, CheckCircle, AlertCircle, TrendingUp,
   Bold, Italic, List, ListOrdered, Heading2, Quote, Undo2, Redo2,
-  Strikethrough, BookOpen, Save, Minus, Share2, Copy, Link, Trash2, MessageSquare,
+  Strikethrough, BookOpen, Save, Minus, Share2, Copy, Link, Trash2, MessageSquare, History,
 } from 'lucide-react';
 
 // ─── guided questions ─────────────────────────────────────────────────────────
@@ -70,7 +70,8 @@ export default function SOPWorkshop() {
   const [critique, setCritique] = useState(null);
   const [critiquing, setCritiquing] = useState(false);
   const [critiqueError, setCritiqueError] = useState('');
-  const [activeTab, setActiveTab] = useState('guide'); // 'guide' | 'critique'
+  const [critiqueHistory, setCritiqueHistory] = useState([]);
+  const [activeTab, setActiveTab] = useState('guide'); // 'guide' | 'critique' | 'history'
   const [mobileTab, setMobileTab] = useState('editor');
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [draftError, setDraftError] = useState('');
@@ -141,11 +142,17 @@ export default function SOPWorkshop() {
           setCritique(parseCritique(existing.critiques[0]));
           setActiveTab('critique');
         }
-        // Fetch review comments for this SOP
-        return apiClient.get(`/api/sops/${existing.id}/review-comments`);
+        // Fetch review comments and critique history for this SOP
+        const reviewPromise = apiClient.get(`/api/sops/${existing.id}/review-comments`);
+        const historyPromise = apiClient.get(`/api/sops/${existing.id}/critiques`).catch(() => ({ data: [] }));
+        return Promise.all([reviewPromise, historyPromise]);
       })
-      .then(res => {
-        if (res) setReviewComments(res.data);
+      .then(results => {
+        if (results) {
+          const [reviewRes, historyRes] = results;
+          if (reviewRes) setReviewComments(reviewRes.data);
+          if (historyRes) setCritiqueHistory(historyRes.data);
+        }
       })
       .catch(() => navigate(`/sop/${universityId}`));
   }, [sopId, editor]);
@@ -162,6 +169,8 @@ export default function SOPWorkshop() {
     try {
       const res = await apiClient.post('/api/critiques', { sopId: sopIdRef.current });
       setCritique(parseCritique(res.data));
+      // Refresh history silently after new critique
+      apiClient.get(`/api/sops/${sopIdRef.current}/critiques`).then(r => setCritiqueHistory(r.data)).catch(() => {});
     } catch (err) {
       setCritiqueError(err.response?.data?.error || 'Failed to generate critique');
     } finally { setCritiquing(false); }
@@ -448,8 +457,9 @@ export default function SOPWorkshop() {
           {/* Panel tab bar */}
           <div className="flex border-b flex-shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
             {[
-              { id: 'guide', label: 'Writing Guide', icon: BookOpen },
+              { id: 'guide', label: 'Guide', icon: BookOpen },
               { id: 'critique', label: 'AI Critique', icon: Sparkles },
+              ...(critiqueHistory.length > 0 ? [{ id: 'history', label: 'History', icon: History }] : []),
             ].map(({ id, label, icon: Icon }) => (
               <button key={id}
                 onClick={() => { setActiveTab(id); setMobileTab(id); }}
@@ -603,6 +613,13 @@ export default function SOPWorkshop() {
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Critique History */}
+            {activeTab === 'history' && (
+              <div className="p-4">
+                <CritiqueHistory history={critiqueHistory} />
               </div>
             )}
 
@@ -771,6 +788,136 @@ function SaveIndicator({ status }) {
   };
   const { text, color } = map[status];
   return <span className="text-xs tabular-nums" style={{ color }}>{text}</span>;
+}
+
+function CritiqueHistory({ history }) {
+  if (history.length === 0) {
+    return (
+      <div className="flex flex-col items-center text-center gap-3 pt-8 pb-4">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+          style={{ background: 'rgba(0,113,227,0.08)' }}>
+          <History size={22} style={{ color: 'var(--accent)' }} strokeWidth={1.6} />
+        </div>
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          No critique history yet. Run your first AI critique to start tracking progress.
+        </p>
+      </div>
+    );
+  }
+
+  const MAX_SHOWN = 5;
+  const shown = history.slice(-MAX_SHOWN);
+  const truncated = history.length > MAX_SHOWN;
+
+  const METRICS = [
+    { key: 'authenticityScore', label: 'Authenticity' },
+    { key: 'specificityScore',  label: 'Specificity'  },
+    { key: 'clarityScore',      label: 'Clarity'      },
+    { key: 'impactScore',       label: 'Impact'       },
+  ];
+
+  const firstOverall = overallScore(shown[0]);
+  const lastOverall  = overallScore(shown[shown.length - 1]);
+  const overallDelta = parseFloat(lastOverall) - parseFloat(firstOverall);
+  const overallDeltaColor = overallDelta > 0 ? '#34C759' : overallDelta < 0 ? '#FF3B30' : 'var(--text-tertiary)';
+  const overallDeltaLabel = overallDelta > 0 ? `+${overallDelta.toFixed(1)}` : overallDelta < 0 ? overallDelta.toFixed(1) : '±0';
+
+  const scoreColor = v => v >= 7 ? '#34C759' : v >= 4 ? '#FF9F0A' : '#FF3B30';
+  const scoreBg    = v => v >= 7 ? 'rgba(52,199,89,0.1)' : v >= 4 ? 'rgba(255,159,10,0.1)' : 'rgba(255,59,48,0.1)';
+
+  return (
+    <div className="space-y-4">
+      {/* Summary line */}
+      <div className="rounded-xl p-3.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+        <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+          {history.length === 1
+            ? 'Critiqued once'
+            : `Critiqued ${history.length} times`}
+        </p>
+        {shown.length >= 2 && (
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            Overall score:{' '}
+            <span className="font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{firstOverall}</span>
+            {' → '}
+            <span className="font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{lastOverall}</span>
+            {' '}
+            <span className="font-semibold" style={{ color: overallDeltaColor }}>({overallDeltaLabel})</span>
+          </p>
+        )}
+        {shown.length === 1 && (
+          <p className="text-xs leading-relaxed mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            Run another critique after revising to see your progress.
+          </p>
+        )}
+      </div>
+
+      {/* Date headers */}
+      {shown.length >= 2 && (
+        <>
+          {truncated && (
+            <p className="text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
+              Showing last {MAX_SHOWN} critiques
+            </p>
+          )}
+
+          {/* Column headers: critique dates */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr>
+                  <td className="py-1.5 pr-3 font-medium w-24 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}></td>
+                  {shown.map((c, i) => (
+                    <td key={c.id} className="py-1.5 px-1 text-center font-medium whitespace-nowrap" style={{ color: 'var(--text-tertiary)', minWidth: '48px' }}>
+                      #{history.length > MAX_SHOWN ? history.length - MAX_SHOWN + i + 1 : i + 1}
+                      <br />
+                      <span style={{ fontSize: '10px' }}>{new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                    </td>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {METRICS.map(({ key, label }) => (
+                  <tr key={key}>
+                    <td className="py-1.5 pr-3 font-medium" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{label}</td>
+                    {shown.map((c, i) => {
+                      const val = c[key];
+                      const prev = i > 0 ? shown[i - 1][key] : null;
+                      const delta = prev != null && val != null ? val - prev : null;
+                      const arrow = delta === null ? null : delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
+                      const arrowColor = delta > 0 ? '#34C759' : delta < 0 ? '#FF3B30' : 'var(--text-tertiary)';
+                      return (
+                        <td key={c.id} className="py-1.5 px-1 text-center">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span
+                              className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold tabular-nums"
+                              style={{ background: val != null ? scoreBg(val) : 'var(--bg-secondary)', color: val != null ? scoreColor(val) : 'var(--text-tertiary)' }}>
+                              {val ?? '—'}
+                            </span>
+                            {arrow && (
+                              <span className="font-bold leading-none" style={{ color: arrowColor, fontSize: '11px' }}>{arrow}</span>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Single critique: show score cards */}
+      {shown.length === 1 && (
+        <div className="grid grid-cols-2 gap-2">
+          {METRICS.map(({ key, label }) => (
+            <ScoreCard key={label} label={label} value={shown[0][key]} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────────────

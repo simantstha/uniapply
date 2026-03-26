@@ -124,6 +124,34 @@ router.post('/:id/generate', async (req, res) => {
   }
 });
 
+// Get critique history for a SOP (ordered oldest-first for trend display)
+router.get('/:id/critiques', async (req, res) => {
+  try {
+    const sop = await prisma.sOP.findFirst({
+      where: { id: parseInt(req.params.id), userId: req.userId },
+    });
+    if (!sop) return res.status(404).json({ error: 'Not found' });
+
+    const critiques = await prisma.sOPCritique.findMany({
+      where: { sopId: parseInt(req.params.id) },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        createdAt: true,
+        authenticityScore: true,
+        specificityScore: true,
+        clarityScore: true,
+        impactScore: true,
+        overallAssessment: true,
+        aiLikelihood: true,
+      },
+    });
+    res.json(critiques);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete SOP
 router.delete('/:id', async (req, res) => {
   try {

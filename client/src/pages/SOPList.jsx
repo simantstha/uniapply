@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
-import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink } from 'lucide-react';
+import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList } from 'lucide-react';
 
 const categoryConfig = {
   dream:  { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', label: 'Dream' },
@@ -111,6 +111,8 @@ export default function SOPList() {
   const [deletingId, setDeletingId] = useState(null);
   const [activeTab, setActiveTab] = useState('sops');
   const [req, setReq] = useState({ loading: false, data: null, error: null });
+  const [checklist, setChecklist] = useState(null);
+  const [percentReady, setPercentReady] = useState(null);
 
   const isPremium = user?.plan === 'student' || user?.plan === 'premium';
 
@@ -125,6 +127,14 @@ export default function SOPList() {
       })
       .catch(() => navigate('/universities'))
       .finally(() => setLoading(false));
+
+    // Fetch checklist silently (non-blocking, fail-safe)
+    apiClient.get(`/api/universities/${universityId}/checklist`)
+      .then(res => {
+        setChecklist(res.data.checklist);
+        setPercentReady(res.data.percentReady);
+      })
+      .catch(() => { /* fail silently — panel just won't show */ });
   }, [universityId]);
 
   const handleNew = async () => {
@@ -250,6 +260,9 @@ export default function SOPList() {
           ))}
         </div>
       </div>
+
+      {/* Application Checklist panel */}
+      {checklist && <ChecklistPanel checklist={checklist} percentReady={percentReady} />}
 
       {/* Tab content */}
       {activeTab === 'requirements' && (
@@ -398,6 +411,70 @@ export default function SOPList() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function ChecklistPanel({ checklist, percentReady }) {
+  // Sort: missing/in_progress first, complete last
+  const sorted = [...checklist].sort((a, b) => {
+    const order = { missing: 0, in_progress: 1, complete: 2 };
+    return (order[a.status] ?? 0) - (order[b.status] ?? 0);
+  });
+
+  return (
+    <div className="card shadow-apple-sm p-5 mt-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <ClipboardList size={14} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Application Checklist</p>
+        </div>
+        <span className="text-sm font-bold tabular-nums" style={{ color: percentReady === 100 ? '#34C759' : 'var(--accent)' }}>
+          {percentReady}%
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full h-1.5 rounded-full mb-4 overflow-hidden" style={{ background: 'var(--bg-secondary)' }}>
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${percentReady}%`,
+            background: percentReady === 100 ? '#34C759' : 'var(--accent)',
+          }}
+        />
+      </div>
+
+      {/* Items */}
+      <div className="space-y-2">
+        {sorted.map(({ item, status, detail }) => {
+          let iconEl;
+          if (status === 'complete') {
+            iconEl = <CheckCircle size={15} strokeWidth={2} style={{ color: '#34C759', flexShrink: 0 }} />;
+          } else if (status === 'in_progress') {
+            iconEl = <Clock size={15} strokeWidth={2} style={{ color: '#FF9F0A', flexShrink: 0 }} />;
+          } else {
+            iconEl = <Circle size={15} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />;
+          }
+
+          return (
+            <div key={item} className="flex items-center gap-3 py-1.5">
+              {iconEl}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm" style={{
+                  color: status === 'missing' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                }}>
+                  {item}
+                </p>
+                {detail && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{detail}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
