@@ -4,7 +4,7 @@ import MobileNav from './MobileNav';
 
 export default function Layout() {
   const location = useLocation();
-  const isSOP = location.pathname.startsWith('/sop/');
+  const isSOP = /^\/sop\/\d+\/\d+/.test(location.pathname);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>

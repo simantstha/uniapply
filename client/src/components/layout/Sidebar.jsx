@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Building2, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, User, Building2, FolderOpen, LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/profile', icon: User, label: 'Profile' },
   { to: '/universities', icon: Building2, label: 'Universities' },
+  { to: '/documents', icon: FolderOpen, label: 'Documents' },
 ];
 
 export default function Sidebar() {
@@ -21,10 +22,13 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-5 py-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-apple-blue rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">U</span>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--accent)' }}>
+            <span className="text-white text-xs font-bold" style={{ fontFamily: 'Fraunces, serif' }}>U</span>
           </div>
-          <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>UniApply</span>
+          <span className="font-semibold text-sm tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Fraunces, serif' }}>
+            UniApply
+          </span>
         </div>
       </div>
 
@@ -36,14 +40,21 @@ export default function Sidebar() {
             to={to}
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-apple-blue text-white shadow-apple-sm'
-                  : 'hover:bg-opacity-60'
+                isActive ? 'text-white' : ''
               }`
             }
-            style={({ isActive }) => isActive ? {} : { color: 'var(--text-secondary)' }}
-            onMouseEnter={e => { if (!e.currentTarget.classList.contains('bg-apple-blue')) e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'; }}
-            onMouseLeave={e => { if (!e.currentTarget.classList.contains('bg-apple-blue')) e.currentTarget.style.backgroundColor = ''; }}
+            style={({ isActive }) => isActive
+              ? { background: 'var(--accent)', color: 'white' }
+              : { color: 'var(--text-secondary)' }
+            }
+            onMouseEnter={e => {
+              if (!e.currentTarget.style.background.includes('var(--accent)'))
+                e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+            }}
+            onMouseLeave={e => {
+              if (!e.currentTarget.style.background.includes('var(--accent)'))
+                e.currentTarget.style.backgroundColor = '';
+            }}
           >
             <Icon size={15} strokeWidth={1.8} />
             {label}
@@ -67,7 +78,7 @@ export default function Sidebar() {
 
         {/* User */}
         <div className="px-3 py-2">
-          <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{user?.name}</p>
+          <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user?.name}</p>
           <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{user?.email}</p>
         </div>
 

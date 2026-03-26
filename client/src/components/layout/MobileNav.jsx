@@ -1,10 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, User, Building2 } from 'lucide-react';
+import { LayoutDashboard, User, Building2, FolderOpen } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/profile', icon: User, label: 'Profile' },
   { to: '/universities', icon: Building2, label: 'Universities' },
+  { to: '/documents', icon: FolderOpen, label: 'Documents' },
 ];
 
 export default function MobileNav() {

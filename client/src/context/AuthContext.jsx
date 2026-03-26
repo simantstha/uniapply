@@ -36,8 +36,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const completeOnboarding = async () => {
+    await apiClient.patch('/api/auth/onboarding');
+    setUser(u => ({ ...u, onboardingCompleted: true }));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signup, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, signup, login, logout, completeOnboarding }}>
       {children}
     </AuthContext.Provider>
   );
