@@ -1,0 +1,18 @@
+export const glossary = {
+  SOP: "Statement of Purpose — a 500-800 word essay explaining your academic background, goals, and why you're applying to this program.",
+  LOR: "Letter of Recommendation — a letter written by a professor or employer supporting your application. Most programs require 2-3.",
+  GRE: "Graduate Record Examination — a standardized test required by many US graduate programs. Sections: Verbal, Quantitative, Analytical Writing.",
+  TOEFL: "Test of English as a Foreign Language — English proficiency test accepted by most US/Canadian universities. Score: 0-120, most programs require 80+.",
+  IELTS: "International English Language Testing System — English proficiency test preferred for UK/Australia. Score: 0-9, most programs require 6.5+.",
+  "I-20": "A form issued by your US university after admission confirming your enrollment. Required to apply for an F-1 student visa.",
+  "F-1 Visa": "US student visa category for full-time academic study. Requires an I-20, SEVIS fee payment, and embassy interview.",
+  SEVIS: "Student and Exchange Visitor Information System — US government system that tracks international students. You pay a $350 SEVIS fee before your visa interview.",
+  WES: "World Education Services — a credential evaluation service that converts your foreign degree/transcripts into US-equivalent grades. Takes 4-8 weeks and costs ~$200.",
+  "TA/RA": "Teaching Assistant / Research Assistant — paid positions at US universities that typically cover full tuition plus a monthly stipend ($1,500-2,500). Common way PhD and some MS students fund their studies.",
+  "Dream School": "A university where admission is competitive given your profile — you have a realistic but challenging chance.",
+  "Target School": "A university where your profile is a strong match — you have a good chance of admission.",
+  "Safety School": "A university where your profile exceeds their typical requirements — you're likely to be admitted.",
+  GPA: "Grade Point Average — US 4.0 scale measure of academic performance. Your foreign grades will be converted to this scale by universities.",
+  CGPA: "Cumulative Grade Point Average — used in South Asian universities, typically on a 10-point scale. A 7.5/10 CGPA is roughly equivalent to a 3.0/4.0 US GPA.",
+  "Credential Evaluation": "The process of converting your foreign academic records to US-equivalent grades, done by agencies like WES or ECE. Many universities require this for international applicants.",
+};

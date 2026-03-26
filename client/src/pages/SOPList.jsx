@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList } from 'lucide-react';
+import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const categoryConfig = {
   dream:  { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', label: 'Dream' },
@@ -558,7 +559,7 @@ function RequirementsPanel({ data, websiteUrl, docStatus, degreeLevel }) {
           )}
           {data.application_fee != null && <Req label="App Fee" value={`$${data.application_fee}`} />}
           {data.international_deadline && <Req label="Intl Deadline" value={data.international_deadline} />}
-          <Req label="SOP / Personal Statement" value={docStatus?.sop?.met ? 'Draft ready' : 'Not started'} completion={docStatus?.sop} />
+          <Req label={<><GlossaryTooltip term="SOP" /> / Personal Statement</>} value={docStatus?.sop?.met ? 'Draft ready' : 'Not started'} completion={docStatus?.sop} />
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/client';
 import { Upload, FileText, Trash2, Download, File, Image, X, Tags, UserCheck, Plus, ChevronDown, Mail } from 'lucide-react';
+import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const DOC_TYPES = [
   { value: 'transcript',      label: 'Transcript',               color: '#0071E3', bg: 'rgba(0,113,227,0.1)' },
@@ -261,7 +262,7 @@ export default function Documents() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759' }}>
-              Recommendation Letters
+              <GlossaryTooltip term="LOR" />
             </span>
             {!lorsLoading && (
               <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{lors.length}</span>

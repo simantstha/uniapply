@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import { Check } from 'lucide-react';
+import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const steps = [
   { id: 1, label: 'Background' },
@@ -166,7 +167,7 @@ export default function Profile() {
                 <div className="flex items-center justify-between mb-1">
                   <label className="label">GPA</label>
                   <div className="flex gap-1">
-                    {[['us_4','4.0'],['cgpa_10','/10'],['percentage','%']].map(([key, lbl]) => (
+                    {[['us_4','4.0'],['cgpa_10',<><GlossaryTooltip term="CGPA" /></>],['percentage','%']].map(([key, lbl]) => (
                       <button key={key} type="button" onClick={() => setGpaScale(key)}
                         className="px-2 py-0.5 rounded-md text-xs font-medium transition-all"
                         style={form.gpaScale === key
@@ -202,18 +203,18 @@ export default function Profile() {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <Field label="GRE Verbal" value={form.greVerbal} onChange={set('greVerbal')} placeholder="130–170" type="number"
-                  min={130} max={170} error={errors.greVerbal} />
-                <Field label="GRE Quant" value={form.greQuant} onChange={set('greQuant')} placeholder="130–170" type="number"
-                  min={130} max={170} error={errors.greQuant} />
-                <Field label="GRE Writing" value={form.greWriting} onChange={set('greWriting')} placeholder="0–6" type="number"
-                  min={0} max={6} step={0.5} error={errors.greWriting} />
+                <FieldWithTooltip label={<GlossaryTooltip term="GRE" />} value={form.greVerbal} onChange={set('greVerbal')} placeholder="130–170" type="number"
+                  min={130} max={170} error={errors.greVerbal} subLabel="Verbal" />
+                <FieldWithTooltip label={<GlossaryTooltip term="GRE" />} value={form.greQuant} onChange={set('greQuant')} placeholder="130–170" type="number"
+                  min={130} max={170} error={errors.greQuant} subLabel="Quant" />
+                <FieldWithTooltip label={<GlossaryTooltip term="GRE" />} value={form.greWriting} onChange={set('greWriting')} placeholder="0–6" type="number"
+                  min={0} max={6} step={0.5} error={errors.greWriting} subLabel="Writing" />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="TOEFL" value={form.toeflScore} onChange={set('toeflScore')} placeholder="0–120" type="number"
+              <Field label={<GlossaryTooltip term="TOEFL" />} value={form.toeflScore} onChange={set('toeflScore')} placeholder="0–120" type="number"
                 min={0} max={120} error={errors.toeflScore} />
-              <Field label="IELTS" value={form.ieltsScore} onChange={set('ieltsScore')} placeholder="0–9" type="number"
+              <Field label={<GlossaryTooltip term="IELTS" />} value={form.ieltsScore} onChange={set('ieltsScore')} placeholder="0–9" type="number"
                 min={0} max={9} step={0.5} error={errors.ieltsScore} />
             </div>
           </div>
@@ -275,6 +276,24 @@ function Field({ label, value, onChange, placeholder, type = 'text', min, max, s
   return (
     <div>
       <label className="label">{label}</label>
+      <input
+        type={type} value={value} onChange={onChange} placeholder={placeholder}
+        min={min} max={max} step={step}
+        className="input"
+        style={error ? { borderColor: '#FF3B30', background: 'rgba(255,59,48,0.04)' } : {}}
+      />
+      {error && <p className="text-xs mt-1" style={{ color: '#FF3B30' }}>{error}</p>}
+    </div>
+  );
+}
+
+function FieldWithTooltip({ label, value, onChange, placeholder, type = 'text', min, max, step, error, subLabel }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1">
+        <label className="label">{label}</label>
+        {subLabel && <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>({subLabel})</span>}
+      </div>
       <input
         type={type} value={value} onChange={onChange} placeholder={placeholder}
         min={min} max={max} step={step}
