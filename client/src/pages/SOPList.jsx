@@ -238,6 +238,23 @@ export default function SOPList() {
               </div>
               <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>{university?.name}</h1>
               <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{university?.program}</p>
+              {percentReady !== null && (
+                <button onClick={() => handleTabChange('checklist')}
+                  className="flex items-center gap-2 mt-2.5 w-full group"
+                  title="View application checklist">
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${percentReady}%`,
+                        background: percentReady === 100 ? '#34C759' : 'var(--accent)',
+                      }} />
+                  </div>
+                  <span className="text-xs font-semibold tabular-nums flex-shrink-0 group-hover:underline"
+                    style={{ color: percentReady === 100 ? '#34C759' : 'var(--accent)' }}>
+                    {percentReady}%
+                  </span>
+                </button>
+              )}
             </div>
             {activeTab === 'sops' && (
               <button onClick={handleNew} disabled={creating || (!isPremium && sops.length >= 1)}
