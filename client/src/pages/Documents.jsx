@@ -160,21 +160,9 @@ export default function Documents() {
     }
   };
 
-  const handleDownload = (doc) => {
-    const token = localStorage.getItem('token');
-    const a = document.createElement('a');
-    a.href = `${import.meta.env.VITE_API_URL}/api/documents/${doc.id}/download`;
-    // Use fetch to download with auth header
-    fetch(a.href, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = doc.fileName;
-        link.click();
-        URL.revokeObjectURL(url);
-      });
+  const handleDownload = async (doc) => {
+    const res = await apiClient.get(`/api/documents/${doc.id}/download`);
+    window.open(res.data.url, '_blank');
   };
 
   // LOR handlers
