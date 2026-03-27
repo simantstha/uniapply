@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { UniversitiesSkeleton } from '../components/common/Skeleton';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import ErrorCard from '../components/ErrorCard';
@@ -215,9 +216,7 @@ export default function Universities() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'transparent' }} />
-        </div>
+        <UniversitiesSkeleton />
       ) : fetchError ? (
         <ErrorCard message="Couldn't load universities" onRetry={fetchData} />
       ) : filtered.length === 0 && universities.length === 0 ? (

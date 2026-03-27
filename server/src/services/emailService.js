@@ -1,6 +1,11 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy init — don't throw at startup if key is missing (local dev without email)
+let _resend = null;
+const getResend = () => {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY || 'missing');
+  return _resend;
+};
 const FROM = process.env.SMTP_FROM || 'UniApply <onboarding@resend.dev>';
 
 export async function sendPasswordReset({ to, name, resetUrl }) {
@@ -30,7 +35,7 @@ export async function sendPasswordReset({ to, name, resetUrl }) {
     </div>
   `;
 
-  await resend.emails.send({ from: FROM, to, subject, html });
+  await getResend().emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendEmailVerification({ to, name, verifyUrl }) {
@@ -60,7 +65,7 @@ export async function sendEmailVerification({ to, name, verifyUrl }) {
     </div>
   `;
 
-  await resend.emails.send({ from: FROM, to, subject, html });
+  await getResend().emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendReviewComment({ to, name, reviewerName, comment, universityName, sopUrl }) {
@@ -91,7 +96,7 @@ export async function sendReviewComment({ to, name, reviewerName, comment, unive
     </div>
   `;
 
-  await resend.emails.send({ from: FROM, to, subject, html });
+  await getResend().emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendDeadlineReminder({ to, name, universityName, program, daysLeft, deadline }) {
@@ -115,5 +120,5 @@ export async function sendDeadlineReminder({ to, name, universityName, program, 
     </div>
   `;
 
-  await resend.emails.send({ from: FROM, to, subject, html });
+  await getResend().emails.send({ from: FROM, to, subject, html });
 }
