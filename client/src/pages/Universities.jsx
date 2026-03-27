@@ -310,7 +310,7 @@ export default function Universities() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map(u => {
-            const cat = categoryConfig[u.category];
+            const cat = categoryConfig[u.category?.toLowerCase()] ?? categoryConfig.target;
             const stat = statusConfig[u.status];
             const dl = degreeLevelConfig[u.degreeLevel] || degreeLevelConfig.masters;
             const fitKey = fitScores[u.id] || 'unknown';
