@@ -357,15 +357,8 @@ export default function SOPList() {
                   </div>
                   <button
                     onClick={async () => {
-                      const token = localStorage.getItem('token');
-                      const res = await fetch(`${apiClient.defaults.baseURL}/api/documents/${doc.id}/download`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                      });
-                      const blob = await res.blob();
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url; a.download = doc.fileName; a.click();
-                      URL.revokeObjectURL(url);
+                      const res = await apiClient.get(`/api/documents/${doc.id}/download`);
+                      window.open(res.data.url, '_blank');
                     }}
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium flex-shrink-0 transition-all"
                     style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>

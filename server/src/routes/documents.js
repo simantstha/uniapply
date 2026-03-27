@@ -1,30 +1,15 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth.js';
+import { uploadToR2, getSignedDownloadUrl, deleteFromR2 } from '../services/r2Storage.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-const UPLOADS_DIR = path.resolve('uploads');
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const userDir = path.join(UPLOADS_DIR, String(req.userId));
-    if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
-    cb(null, userDir);
-  },
-  filename: (req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, `${unique}-${file.originalname}`);
-  },
-});
-
+// Store file in memory, then stream to R2
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
   fileFilter: (req, file, cb) => {
     const allowed = [
@@ -60,19 +45,22 @@ router.get('/', async (req, res) => {
 router.post('/', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file or unsupported type. Allowed: PDF, DOC, DOCX, JPG, PNG.' });
 
-  // Parse universityIds before saving to DB so malformed JSON returns 400, not 500
   let universityIds = [];
   if (req.body.universityIds) {
     try {
       universityIds = JSON.parse(req.body.universityIds);
       if (!Array.isArray(universityIds)) universityIds = [];
     } catch {
-      fs.unlink(req.file.path, () => {});
       return res.status(400).json({ error: 'Invalid universityIds format' });
     }
   }
 
   try {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+    const r2Key = `users/${req.userId}/${unique}-${req.file.originalname}`;
+
+    await uploadToR2(r2Key, req.file.buffer, req.file.mimetype);
+
     const doc = await prisma.document.create({
       data: {
         userId: req.userId,
@@ -81,10 +69,10 @@ router.post('/', upload.single('file'), async (req, res) => {
         fileName: req.file.originalname,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
-        filePath: req.file.path,
+        filePath: r2Key, // store R2 key in filePath column
       },
     });
-    // Save university tags if provided
+
     if (universityIds.length > 0) {
       const valid = await prisma.university.findMany({
         where: { id: { in: universityIds }, userId: req.userId },
@@ -108,20 +96,20 @@ router.post('/', upload.single('file'), async (req, res) => {
     });
     res.json(docWithTags);
   } catch (err) {
-    fs.unlink(req.file.path, () => {});
     res.status(500).json({ error: err.message });
   }
 });
 
-// Download a document (protected — only owner)
+// Download a document — returns a signed R2 URL
 router.get('/:id/download', async (req, res) => {
   try {
     const doc = await prisma.document.findFirst({
       where: { id: parseInt(req.params.id), userId: req.userId },
     });
     if (!doc) return res.status(404).json({ error: 'Not found' });
-    if (!fs.existsSync(doc.filePath)) return res.status(404).json({ error: 'File missing from disk' });
-    res.download(doc.filePath, doc.fileName);
+
+    const url = await getSignedDownloadUrl(doc.filePath, doc.fileName);
+    res.json({ url });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -134,7 +122,8 @@ router.delete('/:id', async (req, res) => {
       where: { id: parseInt(req.params.id), userId: req.userId },
     });
     if (!doc) return res.status(404).json({ error: 'Not found' });
-    fs.unlink(doc.filePath, () => {});
+
+    await deleteFromR2(doc.filePath);
     await prisma.document.delete({ where: { id: doc.id } });
     res.json({ success: true });
   } catch (err) {
