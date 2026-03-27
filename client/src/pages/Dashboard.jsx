@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { getUpcomingMilestones } from './Timeline';
 import ErrorCard from '../components/ErrorCard';
+import { DashboardSkeleton } from '../components/common/Skeleton';
 import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
   CheckCircle, Clock, User, ChevronRight,
@@ -191,13 +192,16 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Loading skeleton */}
+      {!data && !error && <DashboardSkeleton />}
+
       {/* Error state */}
       {error && (
         <ErrorCard message="Couldn't load your stats" onRetry={fetchStats} />
       )}
 
-      {/* Journey Panel */}
-      <div className="card shadow-apple-sm overflow-hidden">
+      {/* Journey Panel — only render once data is loaded */}
+      {data && <div className="card shadow-apple-sm overflow-hidden">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <div className="flex items-center justify-between mb-3">
@@ -292,7 +296,7 @@ export default function Dashboard() {
             })}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Timeline widget */}
       <div className="card shadow-apple-sm overflow-hidden">
