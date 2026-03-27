@@ -63,6 +63,37 @@ export async function sendEmailVerification({ to, name, verifyUrl }) {
   await resend.emails.send({ from: FROM, to, subject, html });
 }
 
+export async function sendReviewComment({ to, name, reviewerName, comment, universityName, sopUrl }) {
+  const subject = `💬 ${reviewerName} commented on your ${universityName} SOP`;
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #FDF8F5;">
+      <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid rgba(196,98,45,0.12);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #C4622D; border-radius: 12px; margin-bottom: 12px;">
+            <span style="color: #fff; font-size: 20px; font-weight: 700;">U</span>
+          </div>
+          <h2 style="color: #1E2D40; margin: 0; font-size: 20px; font-weight: 600;">New comment on your SOP</h2>
+        </div>
+        <p style="color: #4A5568; margin: 0 0 12px;">Hi ${name},</p>
+        <p style="color: #4A5568; margin: 0 0 20px;"><strong>${reviewerName}</strong> left feedback on your <strong>${universityName}</strong> Statement of Purpose:</p>
+        <div style="background: #FDF8F5; border-left: 3px solid #C4622D; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+          <p style="color: #1E2D40; margin: 0; font-style: italic;">"${comment}"</p>
+        </div>
+        <div style="text-align: center; margin-bottom: 24px;">
+          <a href="${sopUrl}"
+             style="display:inline-block;background:#C4622D;color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;">
+            View SOP &amp; Reply
+          </a>
+        </div>
+        <p style="color: #888; font-size: 12px; margin: 0; border-top: 1px solid rgba(196,98,45,0.1); padding-top: 16px;">You're receiving this because someone reviewed your shared SOP on UniApply.</p>
+      </div>
+    </div>
+  `;
+
+  await resend.emails.send({ from: FROM, to, subject, html });
+}
+
 export async function sendDeadlineReminder({ to, name, universityName, program, daysLeft, deadline }) {
   const deadlineStr = new Date(deadline).toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'

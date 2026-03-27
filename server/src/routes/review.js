@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth.js';
+import { sendReviewComment } from '../services/emailService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -139,6 +140,26 @@ router.post('/review/:token/comments', async (req, res) => {
       },
     });
     res.status(201).json(created);
+
+    // Fire-and-forget notification to SOP owner
+    prisma.sOP.findUnique({
+      where: { id: link.sopId },
+      include: {
+        user: { select: { email: true, name: true } },
+        university: { select: { name: true } },
+      },
+    }).then(sop => {
+      if (!sop?.user?.email) return;
+      const sopUrl = `${process.env.APP_URL || 'http://localhost:5173'}/sop/${sop.universityId}/${sop.id}`;
+      return sendReviewComment({
+        to: sop.user.email,
+        name: sop.user.name || 'there',
+        reviewerName: reviewerName.trim(),
+        comment: comment.trim(),
+        universityName: sop.university.name,
+        sopUrl,
+      });
+    }).catch(() => {/* notification failure is non-fatal */});
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
