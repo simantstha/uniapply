@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
-import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList, Info } from 'lucide-react';
+import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList, Info, Paperclip, Download } from 'lucide-react';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const categoryConfig = {
@@ -115,6 +115,7 @@ export default function SOPList() {
   const [checklist, setChecklist] = useState(null);
   const [percentReady, setPercentReady] = useState(null);
   const [checklistLoading, setChecklistLoading] = useState(true);
+  const [docs, setDocs] = useState({ loading: false, data: null });
 
   const isPremium = user?.plan === 'student' || user?.plan === 'premium';
 
@@ -189,6 +190,15 @@ export default function SOPList() {
         setReq({ loading: false, data: null, error: 'Failed to load requirements.' });
       }
     }
+    if (tab === 'documents' && !docs.data && !docs.loading) {
+      setDocs({ loading: true, data: null });
+      try {
+        const res = await apiClient.get(`/api/universities/${universityId}/documents`);
+        setDocs({ loading: false, data: res.data });
+      } catch {
+        setDocs({ loading: false, data: [] });
+      }
+    }
   };
 
   if (loading) return (
@@ -256,6 +266,7 @@ export default function SOPList() {
           {[
             { id: 'sops', label: 'SOPs', icon: FileText },
             { id: 'requirements', label: 'Requirements', icon: BookOpen },
+            { id: 'documents', label: 'Documents', icon: Paperclip },
           ].map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
               className="flex items-center gap-1.5 px-5 py-3 text-sm font-medium transition-all relative"
@@ -301,6 +312,67 @@ export default function SOPList() {
           )}
           {req.error && <p className="text-sm" style={{ color: '#FF3B30' }}>{req.error}</p>}
           {req.data && <RequirementsPanel data={req.data} websiteUrl={university?.websiteUrl} docStatus={req.data.doc_status} degreeLevel={university?.degreeLevel} />}
+        </div>
+      )}
+
+      {activeTab === 'documents' && (
+        <div className="card shadow-apple-sm p-5 mt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Paperclip size={14} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Tagged Documents</p>
+          </div>
+          {docs.loading && (
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</span>
+            </div>
+          )}
+          {!docs.loading && docs.data?.length === 0 && (
+            <div className="text-center py-8">
+              <Paperclip size={28} className="mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} strokeWidth={1.4} />
+              <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>No documents tagged</p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                Tag documents to this university from the{' '}
+                <Link to="/documents" className="underline" style={{ color: 'var(--accent)' }}>Documents</Link> page.
+              </p>
+            </div>
+          )}
+          {!docs.loading && docs.data?.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {docs.data.map(doc => (
+                <div key={doc.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl"
+                  style={{ background: 'var(--bg-secondary)' }}>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FileText size={14} strokeWidth={1.8} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{doc.fileName}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        {doc.docType.replace('_', ' ')} · {(doc.fileSize / 1024).toFixed(0)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem('token');
+                      const res = await fetch(`${apiClient.defaults.baseURL}/api/documents/${doc.id}/download`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = doc.fileName; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium flex-shrink-0 transition-all"
+                    style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
+                    <Download size={12} strokeWidth={2} />
+                    Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

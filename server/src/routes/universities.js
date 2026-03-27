@@ -272,6 +272,28 @@ router.get('/:id/checklist', async (req, res) => {
   }
 });
 
+router.get('/:id/documents', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.userId;
+
+    const university = await prisma.university.findFirst({ where: { id, userId } });
+    if (!university) return res.status(404).json({ error: 'Not found' });
+
+    const docTags = await prisma.documentTag.findMany({
+      where: { universityId: id },
+      include: { document: true },
+    });
+    const docs = docTags
+      .filter(t => t.document.userId === userId)
+      .map(t => t.document);
+
+    res.json(docs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const { name, program, degreeLevel, websiteUrl, category, applicationDeadline, status, notes, fundingType } = req.body;
