@@ -66,7 +66,7 @@ loadAllSchools();
 // Search endpoint — pure local filter, no API call per request
 router.get('/', (req, res) => {
   const { q } = req.query;
-  if (!q || q.length < 2) return res.json([]);
+  if (!q || q.length < 1) return res.json([]);
 
   if (!schoolsCache) {
     // Still loading or no API key — let client fall back to static list
@@ -74,10 +74,19 @@ router.get('/', (req, res) => {
   }
 
   const query = q.toLowerCase();
-  const results = schoolsCache
-    .filter(s => s.name.toLowerCase().includes(query))
-    .slice(0, 10);
+  const startsWith = [];
+  const wordStarts = [];
+  const contains = [];
 
+  for (const s of schoolsCache) {
+    const lower = s.name.toLowerCase();
+    if (lower.startsWith(query)) startsWith.push(s);
+    else if (lower.split(/\s+/).some(w => w.startsWith(query))) wordStarts.push(s);
+    else if (lower.includes(query)) contains.push(s);
+    if (startsWith.length + wordStarts.length + contains.length >= 30) break;
+  }
+
+  const results = [...startsWith, ...wordStarts, ...contains].slice(0, 10);
   res.json(results);
 });
 

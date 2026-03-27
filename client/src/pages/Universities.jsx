@@ -739,7 +739,7 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
 
     // Server search: debounced, but server now searches in-memory (no API call per request)
     clearTimeout(debounceRef.current);
-    if (val.length >= 2) {
+    if (val.length >= 1) {
       debounceRef.current = setTimeout(async () => {
         try {
           const res = await apiClient.get(`/api/college-search?q=${encodeURIComponent(val)}`);
