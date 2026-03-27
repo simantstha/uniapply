@@ -265,6 +265,7 @@ export default function SOPList() {
         <div className="flex border-t" style={{ borderColor: 'var(--border-subtle)' }}>
           {[
             { id: 'sops', label: 'SOPs', icon: FileText },
+            { id: 'checklist', label: 'Checklist', icon: ClipboardList },
             { id: 'requirements', label: 'Requirements', icon: BookOpen },
             { id: 'documents', label: 'Documents', icon: Paperclip },
           ].map(({ id, label, icon: Icon }) => (
@@ -281,26 +282,22 @@ export default function SOPList() {
         </div>
       </div>
 
-      {/* Application Checklist panel */}
-      {checklistLoading ? (
-        <div className="card shadow-apple-sm p-5 mt-4">
-          <div className="flex items-center gap-2 mb-4">
-            <ClipboardList size={14} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
-            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Application Checklist</p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0"
-              style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              Gathering requirements for this program…
-            </p>
-          </div>
-        </div>
-      ) : checklist && (
-        <ChecklistPanel checklist={checklist} percentReady={percentReady} />
-      )}
-
       {/* Tab content */}
+      {activeTab === 'checklist' && (
+        checklistLoading ? (
+          <div className="card shadow-apple-sm p-5 mt-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0"
+                style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Gathering requirements for this program…
+              </p>
+            </div>
+          </div>
+        ) : checklist && (
+          <ChecklistPanel checklist={checklist} percentReady={percentReady} />
+        )
+      )}
       {activeTab === 'requirements' && (
         <div className="card shadow-apple-sm p-5 mt-4">
           {req.loading && (
