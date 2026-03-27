@@ -12,8 +12,18 @@ jobs:
   ci:
     name: CI Check
     runs-on: ubuntu-latest
+    outputs:
+      client_changed: ${{ steps.changes.outputs.client }}
+      server_changed: ${{ steps.changes.outputs.server }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Detect changed directories
+        id: changes
+        run: |
+          echo "client=$(git diff --name-only HEAD^ HEAD | grep -q '^client/' && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "server=$(git diff --name-only HEAD^ HEAD | grep -q '^server/' && echo true || echo false)" >> $GITHUB_OUTPUT
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -25,11 +35,7 @@ jobs:
     name: Deploy Backend to Fly.io
     runs-on: ubuntu-latest
     needs: ci
-    if: |
-      github.event_name == 'push' && (
-        contains(toJson(github.event.commits.*.modified), 'server/') ||
-        contains(toJson(github.event.commits.*.added), 'server/')
-      )
+    if: github.event_name == 'push' && needs.ci.outputs.server_changed == 'true'
     defaults:
       run:
         working-directory: server
@@ -44,11 +50,7 @@ jobs:
     name: Deploy Frontend to Vercel
     runs-on: ubuntu-latest
     needs: ci
-    if: |
-      github.event_name == 'push' && (
-        contains(toJson(github.event.commits.*.modified), 'client/') ||
-        contains(toJson(github.event.commits.*.added), 'client/')
-      )
+    if: github.event_name == 'push' && needs.ci.outputs.client_changed == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
