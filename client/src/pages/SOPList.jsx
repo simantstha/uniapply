@@ -256,17 +256,6 @@ export default function SOPList() {
                 </button>
               )}
             </div>
-            {activeTab === 'sops' && (
-              <button onClick={handleNew} disabled={creating || (!isPremium && sops.length >= 1)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-white flex-shrink-0 transition-all active:scale-95"
-                style={{
-                  background: (!isPremium && sops.length >= 1) ? 'rgba(196,98,45,0.35)' : 'var(--accent)',
-                  cursor: (!isPremium && sops.length >= 1) ? 'not-allowed' : 'pointer',
-                }}>
-                <Plus size={14} strokeWidth={2.5} />
-                {creating ? 'Creating...' : 'New Draft'}
-              </button>
-            )}
           </div>
           {!isPremium && sops.length >= 1 && activeTab === 'sops' && (
             <p className="text-xs mt-3 px-3 py-2 rounded-xl" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
