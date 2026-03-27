@@ -342,7 +342,7 @@ export default function SOPWorkshop() {
           { id: 'guide', label: 'Guide' },
           { id: 'critique', label: 'AI Critique' },
         ].map(tab => (
-          <button key={tab.id} onClick={() => setMobileTab(tab.id)}
+          <button key={tab.id} onClick={() => { setMobileTab(tab.id); if (tab.id !== 'editor') setActiveTab(tab.id); }}
             className="flex-1 py-2.5 text-xs font-medium transition-all"
             style={mobileTab === tab.id
               ? { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' }
@@ -454,8 +454,8 @@ export default function SOPWorkshop() {
           ${mobileTab === 'guide' || mobileTab === 'critique' ? 'flex max-md:flex-1' : 'hidden md:flex'}`}
           style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
 
-          {/* Panel tab bar */}
-          <div className="flex border-b flex-shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
+          {/* Panel tab bar — desktop only; mobile uses the outer tab bar */}
+          <div className="hidden md:flex border-b flex-shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
             {[
               { id: 'guide', label: 'Guide', icon: BookOpen },
               { id: 'critique', label: 'AI Critique', icon: Sparkles },
