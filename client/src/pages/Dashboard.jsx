@@ -139,11 +139,11 @@ export default function Dashboard() {
           <Mail size={15} style={{ color: '#D4A843', flexShrink: 0 }} strokeWidth={1.8} />
           <div className="flex-1 min-w-0">
             {resendSuccess ? (
-              <p className="text-sm" style={{ color: '#1E2D40' }}>
+              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
                 Verification email sent! Check your inbox.
               </p>
             ) : (
-              <p className="text-sm" style={{ color: '#1E2D40' }}>
+              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
                 Please verify your email address.{' '}
                 <button
                   onClick={handleResendVerification}

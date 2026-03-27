@@ -14,7 +14,7 @@ router.post('/suggest-universities', async (req, res) => {
 
     const profile = await prisma.profile.findUnique({ where: { userId } });
 
-    const degreeLevel = profile?.degreeLevel || 'masters';
+    const degreeLevel = profile?.studyLevel || 'masters';
     const suggestions = await suggestUniversities(profile || {}, degreeLevel);
 
     res.json({ suggestions });

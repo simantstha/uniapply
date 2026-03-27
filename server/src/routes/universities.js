@@ -111,8 +111,8 @@ router.post('/', async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
     if (user.plan === 'free') {
       const count = await prisma.university.count({ where: { userId: req.userId } });
-      if (count >= 3) {
-        return res.status(403).json({ error: 'Free plan limit: 3 universities. Upgrade to add more.' });
+      if (count >= 10) {
+        return res.status(403).json({ error: 'Free plan limit: 10 universities. Upgrade to add more.' });
       }
     }
 
@@ -183,6 +183,12 @@ router.get('/:id/checklist', async (req, res) => {
       } catch { /* keep default */ }
     }
 
+    // --- Parse requirements fields (if cached) ---
+    let reqData = null;
+    if (cachedReqs) {
+      try { reqData = JSON.parse(cachedReqs.requirementsJson); } catch { /* keep null */ }
+    }
+
     // --- Evaluate each checklist item ---
 
     // SOP
@@ -210,24 +216,79 @@ router.get('/:id/checklist', async (req, res) => {
     // Document-based items
     const hasDocType = (type) => userDocs.some(d => d.docType === type);
 
-    const transcriptStatus  = hasDocType('transcript')  ? 'complete' : 'missing';
-    const testScoresStatus  = hasDocType('test_scores') ? 'complete' : 'missing';
-    const financialStatus   = hasDocType('financial')   ? 'complete' : 'missing';
-    const resumeStatus      = hasDocType('resume')      ? 'complete' : 'missing';
+    const transcriptStatus = hasDocType('transcript') ? 'complete' : 'missing';
+    const financialStatus  = hasDocType('financial')  ? 'complete' : 'missing';
+    const resumeStatus     = hasDocType('resume')     ? 'complete' : 'missing';
+
+    // Test Scores — enrich detail from requirements if available
+    const testScoresStatus = hasDocType('test_scores') ? 'complete' : 'missing';
+    let testScoresDetail = testScoresStatus === 'complete' ? 'uploaded' : null;
+    if (reqData) {
+      const parts = [];
+      if (reqData.gre?.required === true)       parts.push('GRE required');
+      else if (reqData.gre?.required === 'optional') parts.push('GRE optional');
+      if (reqData.toefl?.minimum)               parts.push(`TOEFL min ${reqData.toefl.minimum}`);
+      if (reqData.ielts?.minimum)               parts.push(`IELTS min ${reqData.ielts.minimum}`);
+      if (parts.length > 0) {
+        testScoresDetail = testScoresStatus === 'complete'
+          ? `uploaded · ${parts.join(' · ')}`
+          : parts.join(' · ');
+      }
+    }
+
+    // Financial Documents — enrich with fund requirement if available
+    let financialDetail = financialStatus === 'complete' ? 'uploaded' : null;
+    if (reqData?.financial_docs) {
+      financialDetail = financialStatus === 'complete'
+        ? `uploaded · ${reqData.financial_docs}`
+        : reqData.financial_docs;
+    }
 
     const checklist = [
-      { item: 'Statement of Purpose',  status: sopStatus,        detail: sopDetail },
-      { item: 'Recommendation Letters', status: lorStatus,        detail: lorDetail },
-      { item: 'Transcript',            status: transcriptStatus, detail: transcriptStatus === 'complete' ? 'uploaded' : null },
-      { item: 'Test Scores',           status: testScoresStatus, detail: testScoresStatus === 'complete' ? 'uploaded' : null },
-      { item: 'Financial Documents',   status: financialStatus,  detail: financialStatus === 'complete' ? 'uploaded' : null },
-      { item: 'Resume / CV',           status: resumeStatus,     detail: resumeStatus === 'complete' ? 'uploaded' : null },
+      { item: 'Statement of Purpose',   status: sopStatus,       detail: sopDetail },
+      { item: 'Recommendation Letters', status: lorStatus,       detail: lorDetail },
+      { item: 'Transcript',             status: transcriptStatus, detail: transcriptStatus === 'complete' ? 'uploaded' : null },
+      { item: 'Test Scores',            status: testScoresStatus, detail: testScoresDetail },
+      { item: 'Financial Documents',    status: financialStatus,  detail: financialDetail },
+      { item: 'Resume / CV',            status: resumeStatus,     detail: resumeStatus === 'complete' ? 'uploaded' : null },
     ];
 
-    const completeCount = checklist.filter(c => c.status === 'complete').length;
-    const percentReady = Math.round((completeCount / checklist.length) * 100);
+    // Conditional items from requirements (status: 'info' — informational, not tracked)
+    if (reqData?.credential_evaluation) {
+      checklist.push({ item: 'Credential Evaluation', status: 'info', detail: reqData.credential_evaluation });
+    }
+    if (reqData?.application_fee > 0) {
+      checklist.push({ item: 'Application Fee', status: 'info', detail: `$${reqData.application_fee}` });
+    }
+
+    // Percent only counts trackable items (exclude 'info')
+    const trackable = checklist.filter(c => c.status !== 'info');
+    const completeCount = trackable.filter(c => c.status === 'complete').length;
+    const percentReady = Math.round((completeCount / trackable.length) * 100);
 
     res.json({ checklist, percentReady });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/:id/documents', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.userId;
+
+    const university = await prisma.university.findFirst({ where: { id, userId } });
+    if (!university) return res.status(404).json({ error: 'Not found' });
+
+    const docTags = await prisma.documentTag.findMany({
+      where: { universityId: id },
+      include: { document: true },
+    });
+    const docs = docTags
+      .filter(t => t.document.userId === userId)
+      .map(t => t.document);
+
+    res.json(docs);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

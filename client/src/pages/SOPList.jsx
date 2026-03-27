@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
-import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList } from 'lucide-react';
+import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList, Info, Paperclip, Download } from 'lucide-react';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const categoryConfig = {
@@ -114,8 +114,21 @@ export default function SOPList() {
   const [req, setReq] = useState({ loading: false, data: null, error: null });
   const [checklist, setChecklist] = useState(null);
   const [percentReady, setPercentReady] = useState(null);
+  const [checklistLoading, setChecklistLoading] = useState(true);
+  const [docs, setDocs] = useState({ loading: false, data: null });
 
   const isPremium = user?.plan === 'student' || user?.plan === 'premium';
+
+  const fetchChecklist = () => {
+    setChecklistLoading(true);
+    apiClient.get(`/api/universities/${universityId}/checklist`)
+      .then(res => {
+        setChecklist(res.data.checklist);
+        setPercentReady(res.data.percentReady);
+      })
+      .catch(() => { /* fail silently — panel just won't show */ })
+      .finally(() => setChecklistLoading(false));
+  };
 
   useEffect(() => {
     Promise.all([
@@ -129,13 +142,8 @@ export default function SOPList() {
       .catch(() => navigate('/universities'))
       .finally(() => setLoading(false));
 
-    // Fetch checklist silently (non-blocking, fail-safe)
-    apiClient.get(`/api/universities/${universityId}/checklist`)
-      .then(res => {
-        setChecklist(res.data.checklist);
-        setPercentReady(res.data.percentReady);
-      })
-      .catch(() => { /* fail silently — panel just won't show */ });
+    // Fetch checklist (non-blocking)
+    fetchChecklist();
   }, [universityId]);
 
   const handleNew = async () => {
@@ -177,8 +185,18 @@ export default function SOPList() {
       try {
         const res = await apiClient.get(`/api/universities/${universityId}/requirements`);
         setReq({ loading: false, data: res.data, error: null });
+        fetchChecklist(); // re-fetch now that requirements are cached
       } catch {
         setReq({ loading: false, data: null, error: 'Failed to load requirements.' });
+      }
+    }
+    if (tab === 'documents' && !docs.data && !docs.loading) {
+      setDocs({ loading: true, data: null });
+      try {
+        const res = await apiClient.get(`/api/universities/${universityId}/documents`);
+        setDocs({ loading: false, data: res.data });
+      } catch {
+        setDocs({ loading: false, data: [] });
       }
     }
   };
@@ -220,18 +238,24 @@ export default function SOPList() {
               </div>
               <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>{university?.name}</h1>
               <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{university?.program}</p>
+              {percentReady !== null && (
+                <button onClick={() => handleTabChange('checklist')}
+                  className="flex items-center gap-2 mt-2.5 w-full group"
+                  title="View application checklist">
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${percentReady}%`,
+                        background: percentReady === 100 ? '#34C759' : 'var(--accent)',
+                      }} />
+                  </div>
+                  <span className="text-xs font-semibold tabular-nums flex-shrink-0 group-hover:underline"
+                    style={{ color: percentReady === 100 ? '#34C759' : 'var(--accent)' }}>
+                    {percentReady}%
+                  </span>
+                </button>
+              )}
             </div>
-            {activeTab === 'sops' && (
-              <button onClick={handleNew} disabled={creating || (!isPremium && sops.length >= 1)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-white flex-shrink-0 transition-all active:scale-95"
-                style={{
-                  background: (!isPremium && sops.length >= 1) ? 'rgba(196,98,45,0.35)' : 'var(--accent)',
-                  cursor: (!isPremium && sops.length >= 1) ? 'not-allowed' : 'pointer',
-                }}>
-                <Plus size={14} strokeWidth={2.5} />
-                {creating ? 'Creating...' : 'New Draft'}
-              </button>
-            )}
           </div>
           {!isPremium && sops.length >= 1 && activeTab === 'sops' && (
             <p className="text-xs mt-3 px-3 py-2 rounded-xl" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
@@ -247,7 +271,9 @@ export default function SOPList() {
         <div className="flex border-t" style={{ borderColor: 'var(--border-subtle)' }}>
           {[
             { id: 'sops', label: 'SOPs', icon: FileText },
+            { id: 'checklist', label: 'Checklist', icon: ClipboardList },
             { id: 'requirements', label: 'Requirements', icon: BookOpen },
+            { id: 'documents', label: 'Documents', icon: Paperclip },
           ].map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => handleTabChange(id)}
               className="flex items-center gap-1.5 px-5 py-3 text-sm font-medium transition-all relative"
@@ -262,10 +288,22 @@ export default function SOPList() {
         </div>
       </div>
 
-      {/* Application Checklist panel */}
-      {checklist && <ChecklistPanel checklist={checklist} percentReady={percentReady} />}
-
       {/* Tab content */}
+      {activeTab === 'checklist' && (
+        checklistLoading ? (
+          <div className="card shadow-apple-sm p-5 mt-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0"
+                style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Gathering requirements for this program…
+              </p>
+            </div>
+          </div>
+        ) : checklist && (
+          <ChecklistPanel checklist={checklist} percentReady={percentReady} />
+        )
+      )}
       {activeTab === 'requirements' && (
         <div className="card shadow-apple-sm p-5 mt-4">
           {req.loading && (
@@ -277,6 +315,67 @@ export default function SOPList() {
           )}
           {req.error && <p className="text-sm" style={{ color: '#FF3B30' }}>{req.error}</p>}
           {req.data && <RequirementsPanel data={req.data} websiteUrl={university?.websiteUrl} docStatus={req.data.doc_status} degreeLevel={university?.degreeLevel} />}
+        </div>
+      )}
+
+      {activeTab === 'documents' && (
+        <div className="card shadow-apple-sm p-5 mt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Paperclip size={14} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Tagged Documents</p>
+          </div>
+          {docs.loading && (
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</span>
+            </div>
+          )}
+          {!docs.loading && docs.data?.length === 0 && (
+            <div className="text-center py-8">
+              <Paperclip size={28} className="mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} strokeWidth={1.4} />
+              <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>No documents tagged</p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                Tag documents to this university from the{' '}
+                <Link to="/documents" className="underline" style={{ color: 'var(--accent)' }}>Documents</Link> page.
+              </p>
+            </div>
+          )}
+          {!docs.loading && docs.data?.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {docs.data.map(doc => (
+                <div key={doc.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl"
+                  style={{ background: 'var(--bg-secondary)' }}>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FileText size={14} strokeWidth={1.8} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{doc.fileName}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        {doc.docType.replace('_', ' ')} · {(doc.fileSize / 1024).toFixed(0)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem('token');
+                      const res = await fetch(`${apiClient.defaults.baseURL}/api/documents/${doc.id}/download`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = doc.fileName; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium flex-shrink-0 transition-all"
+                    style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
+                    <Download size={12} strokeWidth={2} />
+                    Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -417,9 +516,9 @@ export default function SOPList() {
 }
 
 function ChecklistPanel({ checklist, percentReady }) {
-  // Sort: missing/in_progress first, complete last
+  // Sort: missing/in_progress first, complete next, info last
   const sorted = [...checklist].sort((a, b) => {
-    const order = { missing: 0, in_progress: 1, complete: 2 };
+    const order = { missing: 0, in_progress: 1, complete: 2, info: 3 };
     return (order[a.status] ?? 0) - (order[b.status] ?? 0);
   });
 
@@ -455,6 +554,8 @@ function ChecklistPanel({ checklist, percentReady }) {
             iconEl = <CheckCircle size={15} strokeWidth={2} style={{ color: '#34C759', flexShrink: 0 }} />;
           } else if (status === 'in_progress') {
             iconEl = <Clock size={15} strokeWidth={2} style={{ color: '#FF9F0A', flexShrink: 0 }} />;
+          } else if (status === 'info') {
+            iconEl = <Info size={15} strokeWidth={1.8} style={{ color: 'var(--accent)', flexShrink: 0 }} />;
           } else {
             iconEl = <Circle size={15} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />;
           }
@@ -480,7 +581,7 @@ function ChecklistPanel({ checklist, percentReady }) {
   );
 }
 
-function FundingRow({ degreeLevel }) {
+function FundingRow({ degreeLevel, websiteUrl }) {
   if (degreeLevel === 'phd') {
     return (
       <div className="px-3 py-2.5 rounded-xl col-span-2 sm:col-span-3" style={{ background: 'rgba(52,199,89,0.06)', border: '1px solid rgba(52,199,89,0.3)' }}>
@@ -493,10 +594,16 @@ function FundingRow({ degreeLevel }) {
     return (
       <div className="px-3 py-2.5 rounded-xl col-span-2 sm:col-span-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
         <p className="text-xs uppercase tracking-wide font-semibold mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Funding</p>
-        <p className="text-sm font-semibold flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
-          Check program website
-          <ExternalLink size={11} style={{ color: 'var(--accent)' }} />
-        </p>
+        {websiteUrl ? (
+          <a href={websiteUrl} target="_blank" rel="noreferrer"
+            className="text-sm font-semibold flex items-center gap-1"
+            style={{ color: 'var(--accent)' }}>
+            Check program website
+            <ExternalLink size={11} />
+          </a>
+        ) : (
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Check program website</p>
+        )}
       </div>
     );
   }
@@ -533,7 +640,7 @@ function RequirementsPanel({ data, websiteUrl, docStatus, degreeLevel }) {
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>Academic</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <FundingRow degreeLevel={degreeLevel} />
+          <FundingRow degreeLevel={degreeLevel} websiteUrl={data.source_url || websiteUrl} />
           {data.gpa?.competitive != null && (
             <Req label="Competitive GPA" value={`${formatGpa(data.gpa.competitive)} / ${data.gpa.scale || '4.0'}`} />
           )}

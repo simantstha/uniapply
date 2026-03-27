@@ -88,7 +88,13 @@ export default function Universities() {
     apiClient.get('/api/universities/fit-scores').then(res => setFitScores(res.data.scores || {})).catch(() => {});
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+    apiClient.get('/api/profile').then(res => {
+      const level = res.data?.studyLevel;
+      if (level) setForm(f => ({ ...f, degreeLevel: level }));
+    }).catch(() => {});
+  }, []);
 
   const set = field => e => setForm(f => ({ ...f, [field]: e.target.value }));
   const setEdit = field => e => setEditForm(f => ({ ...f, [field]: e.target.value }));
@@ -220,22 +226,22 @@ export default function Universities() {
           name: s.name,
           program: s.program,
           degreeLevel: 'masters',
-          category: s.tier,
+          category: s.tier.charAt(0).toUpperCase() + s.tier.slice(1),
           status: 'not_started',
           fundingType: 'unknown',
         })
       ));
       closeSuggestModal();
       fetchData();
-    } catch {
-      setSuggestError('Failed to add some universities. Please try again.');
+    } catch (err) {
+      setSuggestError(err.response?.data?.error || 'Failed to add some universities. Please try again.');
     } finally {
       setAddingSelected(false);
     }
   };
 
   const hasPhdUniversity = universities.some(u => u.degreeLevel === 'phd');
-  const filtered = filter === 'all' ? universities : universities.filter(u => u.category === filter);
+  const filtered = filter === 'all' ? universities : universities.filter(u => u.category?.toLowerCase() === filter);
 
   return (
     <div className="p-4 md:p-8">
@@ -462,25 +468,13 @@ export default function Universities() {
 
                 <MField label="Program *" value={form.program} onChange={set('program')} required placeholder="e.g. BS Computer Science" />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">Degree Level *</label>
-                    <select value={form.degreeLevel} onChange={set('degreeLevel')} className="input">
-                      <option value="undergraduate">Undergraduate</option>
-                      <option value="masters">Master's</option>
-                      <option value="phd">PhD</option>
-                      <option value="certificate">Certificate</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label">Category *</label>
-                    <select value={form.category} onChange={set('category')} className="input">
-                      <option value="dream">Dream</option>
-                      <option value="target">Target</option>
-                      <option value="safety">Safety</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="label">Category *</label>
+                  <select value={form.category} onChange={set('category')} className="input">
+                    <option value="dream">Dream</option>
+                    <option value="target">Target</option>
+                    <option value="safety">Safety</option>
+                  </select>
                 </div>
 
                 <div>
