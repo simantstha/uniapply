@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
-import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList } from 'lucide-react';
+import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList, Info } from 'lucide-react';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const categoryConfig = {
@@ -114,8 +114,20 @@ export default function SOPList() {
   const [req, setReq] = useState({ loading: false, data: null, error: null });
   const [checklist, setChecklist] = useState(null);
   const [percentReady, setPercentReady] = useState(null);
+  const [checklistLoading, setChecklistLoading] = useState(true);
 
   const isPremium = user?.plan === 'student' || user?.plan === 'premium';
+
+  const fetchChecklist = () => {
+    setChecklistLoading(true);
+    apiClient.get(`/api/universities/${universityId}/checklist`)
+      .then(res => {
+        setChecklist(res.data.checklist);
+        setPercentReady(res.data.percentReady);
+      })
+      .catch(() => { /* fail silently — panel just won't show */ })
+      .finally(() => setChecklistLoading(false));
+  };
 
   useEffect(() => {
     Promise.all([
@@ -129,13 +141,8 @@ export default function SOPList() {
       .catch(() => navigate('/universities'))
       .finally(() => setLoading(false));
 
-    // Fetch checklist silently (non-blocking, fail-safe)
-    apiClient.get(`/api/universities/${universityId}/checklist`)
-      .then(res => {
-        setChecklist(res.data.checklist);
-        setPercentReady(res.data.percentReady);
-      })
-      .catch(() => { /* fail silently — panel just won't show */ });
+    // Fetch checklist (non-blocking)
+    fetchChecklist();
   }, [universityId]);
 
   const handleNew = async () => {
@@ -177,6 +184,7 @@ export default function SOPList() {
       try {
         const res = await apiClient.get(`/api/universities/${universityId}/requirements`);
         setReq({ loading: false, data: res.data, error: null });
+        fetchChecklist(); // re-fetch now that requirements are cached
       } catch {
         setReq({ loading: false, data: null, error: 'Failed to load requirements.' });
       }
@@ -263,7 +271,23 @@ export default function SOPList() {
       </div>
 
       {/* Application Checklist panel */}
-      {checklist && <ChecklistPanel checklist={checklist} percentReady={percentReady} />}
+      {checklistLoading ? (
+        <div className="card shadow-apple-sm p-5 mt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList size={14} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Application Checklist</p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0"
+              style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              Gathering requirements for this program…
+            </p>
+          </div>
+        </div>
+      ) : checklist && (
+        <ChecklistPanel checklist={checklist} percentReady={percentReady} />
+      )}
 
       {/* Tab content */}
       {activeTab === 'requirements' && (
@@ -417,9 +441,9 @@ export default function SOPList() {
 }
 
 function ChecklistPanel({ checklist, percentReady }) {
-  // Sort: missing/in_progress first, complete last
+  // Sort: missing/in_progress first, complete next, info last
   const sorted = [...checklist].sort((a, b) => {
-    const order = { missing: 0, in_progress: 1, complete: 2 };
+    const order = { missing: 0, in_progress: 1, complete: 2, info: 3 };
     return (order[a.status] ?? 0) - (order[b.status] ?? 0);
   });
 
@@ -455,6 +479,8 @@ function ChecklistPanel({ checklist, percentReady }) {
             iconEl = <CheckCircle size={15} strokeWidth={2} style={{ color: '#34C759', flexShrink: 0 }} />;
           } else if (status === 'in_progress') {
             iconEl = <Clock size={15} strokeWidth={2} style={{ color: '#FF9F0A', flexShrink: 0 }} />;
+          } else if (status === 'info') {
+            iconEl = <Info size={15} strokeWidth={1.8} style={{ color: 'var(--accent)', flexShrink: 0 }} />;
           } else {
             iconEl = <Circle size={15} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />;
           }
@@ -480,7 +506,7 @@ function ChecklistPanel({ checklist, percentReady }) {
   );
 }
 
-function FundingRow({ degreeLevel }) {
+function FundingRow({ degreeLevel, websiteUrl }) {
   if (degreeLevel === 'phd') {
     return (
       <div className="px-3 py-2.5 rounded-xl col-span-2 sm:col-span-3" style={{ background: 'rgba(52,199,89,0.06)', border: '1px solid rgba(52,199,89,0.3)' }}>
@@ -493,10 +519,16 @@ function FundingRow({ degreeLevel }) {
     return (
       <div className="px-3 py-2.5 rounded-xl col-span-2 sm:col-span-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
         <p className="text-xs uppercase tracking-wide font-semibold mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Funding</p>
-        <p className="text-sm font-semibold flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
-          Check program website
-          <ExternalLink size={11} style={{ color: 'var(--accent)' }} />
-        </p>
+        {websiteUrl ? (
+          <a href={websiteUrl} target="_blank" rel="noreferrer"
+            className="text-sm font-semibold flex items-center gap-1"
+            style={{ color: 'var(--accent)' }}>
+            Check program website
+            <ExternalLink size={11} />
+          </a>
+        ) : (
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Check program website</p>
+        )}
       </div>
     );
   }
@@ -533,7 +565,7 @@ function RequirementsPanel({ data, websiteUrl, docStatus, degreeLevel }) {
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>Academic</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <FundingRow degreeLevel={degreeLevel} />
+          <FundingRow degreeLevel={degreeLevel} websiteUrl={data.source_url || websiteUrl} />
           {data.gpa?.competitive != null && (
             <Req label="Competitive GPA" value={`${formatGpa(data.gpa.competitive)} / ${data.gpa.scale || '4.0'}`} />
           )}

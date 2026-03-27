@@ -52,6 +52,11 @@ const FIELDS = [
   'Education', 'Social Work', 'Communications', 'Other',
 ];
 
+const TARGET_COUNTRIES = [
+  'USA', 'Canada', 'Australia', 'UK', 'Germany',
+  'Japan', 'South Korea', 'Netherlands', 'New Zealand',
+];
+
 const buildTimelines = () => {
   const now = new Date();
   const y = now.getFullYear();
@@ -103,11 +108,19 @@ export default function Onboarding() {
   const [gre, setGre] = useState('');
   const [scoreErrors, setScoreErrors] = useState({});
 
+  const [targetCountries, setTargetCountries] = useState([]);
+
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [suggestionsError, setSuggestionsError] = useState(null);
   const [selectedSchools, setSelectedSchools] = useState(new Set());
   const [addingSchools, setAddingSchools] = useState(false);
+
+  const toggleCountry = (country) => {
+    setTargetCountries(prev =>
+      prev.includes(country) ? prev.filter(c => c !== country) : [...prev, country]
+    );
+  };
 
   const handleGpaScaleChange = scale => {
     setGpaScaleState(scale);
@@ -162,6 +175,7 @@ export default function Onboarding() {
         gpa: gpa ? parseFloat(gpa) : null,
         gpaScale,
         toeflScore: toefl ? parseInt(toefl) : null,
+        targetCountries: targetCountries.length > 0 ? targetCountries.join(',') : null,
       };
       if (isUndergrad && sat) profileData.satScore = parseInt(sat);
       if (!isUndergrad && gre) profileData.greVerbal = parseInt(gre);
@@ -341,6 +355,29 @@ export default function Onboarding() {
                 <textarea value={careerGoals} onChange={e => setCareerGoals(e.target.value)}
                   placeholder="What do you want to do after graduating? (2–3 sentences)"
                   className="input text-sm resize-none" rows={3} />
+              </div>
+
+              <div>
+                <label className="label">Where do you want to study? <span style={{ color: 'var(--text-tertiary)' }}>(optional)</span></label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TARGET_COUNTRIES.map(country => {
+                    const selected = targetCountries.includes(country);
+                    return (
+                      <button key={country} type="button" onClick={() => toggleCountry(country)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
+                        style={selected
+                          ? { background: 'var(--accent)', color: 'white' }
+                          : { background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                        {country}
+                      </button>
+                    );
+                  })}
+                </div>
+                {targetCountries.length === 0 && (
+                  <p className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                    No preference — we'll suggest from multiple countries
+                  </p>
+                )}
               </div>
             </div>
           </div>
