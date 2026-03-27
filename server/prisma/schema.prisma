@@ -53,6 +53,9 @@ model Profile {
   careerGoals              String?  @map("career_goals")
   researchInterests        String?  @map("research_interests")
   extracurriculars         String?
+  workExperience           String?  @map("work_experience")
+  communityService         String?  @map("community_service")
+  targetCountries          String?  @map("target_countries") // comma-separated e.g. "USA,Canada,UK"
   createdAt                DateTime @default(now()) @map("created_at")
   updatedAt                DateTime @updatedAt @map("updated_at")
 

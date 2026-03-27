@@ -259,6 +259,11 @@ export default function Universities() {
         </div>
       </div>
 
+      {/* Profile completion nudge for AI suggestions */}
+      {!loading && universities.length > 0 && (
+        <ProfileCompletionNudge />
+      )}
+
       {/* PhD Funding Awareness Banner */}
       {hasPhdUniversity && !bannerDismissed && (
         <div className="flex items-start justify-between gap-3 mb-5 px-4 py-3 rounded-xl"
@@ -802,6 +807,42 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+const NUDGE_KEY = 'uniapply_profile_nudge_dismissed';
+
+function ProfileCompletionNudge() {
+  const [show, setShow] = useState(false);
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(NUDGE_KEY) === 'true');
+
+  useEffect(() => {
+    if (dismissed) return;
+    apiClient.get('/api/profile').then(res => {
+      const p = res.data;
+      const missing = !p?.workExperience && !p?.communityService && !p?.targetCountries;
+      if (missing) setShow(true);
+    }).catch(() => {});
+  }, [dismissed]);
+
+  if (!show || dismissed) return null;
+
+  return (
+    <div className="flex items-start justify-between gap-3 mb-5 px-4 py-3 rounded-xl"
+      style={{ background: 'rgba(196,98,45,0.07)', border: '1px solid rgba(196,98,45,0.2)' }}>
+      <p className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>
+        <span className="mr-1.5">✨</span>
+        <strong>Get better AI suggestions</strong> — add your work experience, community service, and target countries to your{' '}
+        <a href="/profile" className="underline font-medium" style={{ color: 'var(--accent)' }}>profile</a>.
+      </p>
+      <button onClick={() => { localStorage.setItem(NUDGE_KEY, 'true'); setDismissed(true); setShow(false); }}
+        className="flex-shrink-0 p-0.5 rounded-md transition-colors"
+        style={{ color: 'var(--accent)' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(196,98,45,0.12)'}
+        onMouseLeave={e => e.currentTarget.style.background = ''}>
+        <X size={15} />
+      </button>
     </div>
   );
 }
