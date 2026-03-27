@@ -38,7 +38,14 @@ Write in first person. Be specific, not generic. Avoid clichés like "from a you
 }
 
 export async function suggestUniversities(profile, degreeLevel) {
-  const prompt = `You are a university admissions advisor helping a student find the right schools.
+  const targetCountries = profile.targetCountries
+    ? profile.targetCountries.split(',').filter(Boolean)
+    : [];
+  const countryRule = targetCountries.length > 0
+    ? `- Only suggest universities in these countries: ${targetCountries.join(', ')}`
+    : `- Vary by country (USA, Canada, UK, Australia, Germany) when appropriate`;
+
+  const prompt = `You are a university admissions advisor helping a South Asian student find the right schools.
 
 Student Profile:
 - Degree level: ${degreeLevel}
@@ -48,6 +55,9 @@ Student Profile:
 - TOEFL: ${profile.toeflScore || 'not specified'}
 - IELTS: ${profile.ieltsScore || 'not specified'}
 - Research interests: ${profile.researchInterests || 'not specified'}
+- Work experience: ${profile.workExperience || profile.workExperienceYears ? `${profile.workExperience || ''} (${profile.workExperienceYears || 0} years)` : 'not specified'}
+- Extracurriculars: ${profile.extracurriculars || 'not specified'}
+- Community service: ${profile.communityService || 'not specified'}
 
 Suggest exactly 9 universities: 3 Dream schools, 3 Target schools, and 3 Safety schools.
 
@@ -55,9 +65,10 @@ Rules:
 - Dream: prestigious programs where admission is competitive given the profile
 - Target: strong programs where the student has a realistic shot
 - Safety: solid programs where the student is likely to get in
-- Vary by country (US, UK, Canada, Australia, Europe) when appropriate
+${countryRule}
 - Match the specific field of study and degree level
 - Be specific about the PROGRAM name, not just the university
+- Factor in the student's work experience and community involvement when assessing fit
 
 Return ONLY a JSON array with exactly 9 objects, no explanation:
 [
@@ -66,7 +77,7 @@ Return ONLY a JSON array with exactly 9 objects, no explanation:
     "program": "MS Computer Science",
     "country": "USA",
     "tier": "dream",
-    "reason": "One sentence on why this fits the student's goals"
+    "reason": "One sentence on why this fits the student's goals and background"
   }
 ]`;
 

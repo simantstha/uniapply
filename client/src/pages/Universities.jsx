@@ -3,7 +3,7 @@ import { UniversitiesSkeleton } from '../components/common/Skeleton';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import ErrorCard from '../components/ErrorCard';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows, Sparkles, CheckCircle2, Circle } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 
 const PHD_BANNER_KEY = 'uniapply_phd_banner_dismissed';
@@ -69,6 +69,14 @@ export default function Universities() {
   const [deletingId, setDeletingId] = useState(null);
   const [fitScores, setFitScores] = useState({});
   const [bannerDismissed, setBannerDismissed] = useState(() => localStorage.getItem(PHD_BANNER_KEY) === 'true');
+
+  // AI Suggestions state
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [suggestError, setSuggestError] = useState('');
+  const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
+  const [addingSelected, setAddingSelected] = useState(false);
 
   const fetchData = () => {
     setFetchError(false);
@@ -166,6 +174,66 @@ export default function Universities() {
     setBannerDismissed(true);
   };
 
+  const fetchSuggestions = async () => {
+    setSuggestLoading(true);
+    setSuggestError('');
+    setSuggestions([]);
+    setSelectedSuggestions(new Set());
+    try {
+      const res = await apiClient.post('/api/onboarding/suggest-universities');
+      setSuggestions(res.data.suggestions || []);
+    } catch (err) {
+      setSuggestError(err.response?.data?.error || 'Failed to get suggestions. Make sure your profile is complete.');
+    } finally {
+      setSuggestLoading(false);
+    }
+  };
+
+  const openSuggestModal = () => {
+    setShowSuggestModal(true);
+    fetchSuggestions();
+  };
+
+  const closeSuggestModal = () => {
+    setShowSuggestModal(false);
+    setSuggestions([]);
+    setSuggestError('');
+    setSelectedSuggestions(new Set());
+  };
+
+  const toggleSuggestion = (idx) => {
+    setSelectedSuggestions(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const addSelectedSuggestions = async () => {
+    if (selectedSuggestions.size === 0) return;
+    setAddingSelected(true);
+    const toAdd = [...selectedSuggestions].map(i => suggestions[i]);
+    try {
+      await Promise.all(toAdd.map(s =>
+        apiClient.post('/api/universities', {
+          name: s.name,
+          program: s.program,
+          degreeLevel: 'masters',
+          category: s.tier,
+          status: 'not_started',
+          fundingType: 'unknown',
+        })
+      ));
+      closeSuggestModal();
+      fetchData();
+    } catch {
+      setSuggestError('Failed to add some universities. Please try again.');
+    } finally {
+      setAddingSelected(false);
+    }
+  };
+
   const hasPhdUniversity = universities.some(u => u.degreeLevel === 'phd');
   const filtered = filter === 'all' ? universities : universities.filter(u => u.category === filter);
 
@@ -177,12 +245,24 @@ export default function Universities() {
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Universities</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{universities.length} added</p>
         </div>
-        <button onClick={() => { setShowModal(true); setSelected(new Set()); }} className="btn-primary flex items-center gap-1.5">
-          <Plus size={14} strokeWidth={2.5} />
-          <span className="hidden sm:inline">Add University</span>
-          <span className="sm:hidden">Add</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={openSuggestModal} className="btn-secondary flex items-center gap-1.5">
+            <Sparkles size={14} />
+            <span className="hidden sm:inline">AI Suggestions</span>
+            <span className="sm:hidden">Suggest</span>
+          </button>
+          <button onClick={() => { setShowModal(true); setSelected(new Set()); }} className="btn-primary flex items-center gap-1.5">
+            <Plus size={14} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Add University</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        </div>
       </div>
+
+      {/* Profile completion nudge for AI suggestions */}
+      {!loading && universities.length > 0 && (
+        <ProfileCompletionNudge />
+      )}
 
       {/* PhD Funding Awareness Banner */}
       {hasPhdUniversity && !bannerDismissed && (
@@ -230,7 +310,7 @@ export default function Universities() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map(u => {
-            const cat = categoryConfig[u.category];
+            const cat = categoryConfig[u.category?.toLowerCase()] ?? categoryConfig.target;
             const stat = statusConfig[u.status];
             const dl = degreeLevelConfig[u.degreeLevel] || degreeLevelConfig.masters;
             const fitKey = fitScores[u.id] || 'unknown';
@@ -447,6 +527,107 @@ export default function Universities() {
         </div>
       )}
 
+      {/* AI Suggestions Modal */}
+      {showSuggestModal && (
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+          <div className="card shadow-apple-lg w-full sm:max-w-xl sm:rounded-2xl rounded-t-2xl rounded-b-none sm:rounded-b-2xl overflow-y-auto"
+            style={{ maxHeight: '90vh' }}>
+            <div className="p-5 md:p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(196,98,45,0.1)' }}>
+                    <Sparkles size={15} style={{ color: 'var(--accent)' }} />
+                  </div>
+                  <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>AI University Suggestions</h2>
+                </div>
+                <button onClick={closeSuggestModal}
+                  className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-tertiary)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                  onMouseLeave={e => e.currentTarget.style.background = ''}>
+                  <X size={15} />
+                </button>
+              </div>
+              <p className="text-xs mb-5 ml-10" style={{ color: 'var(--text-secondary)' }}>
+                Based on your profile — select universities to add to your list.
+              </p>
+
+              {suggestError && (
+                <div className="mb-4 px-3.5 py-2.5 rounded-xl text-xs" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.2)' }}>
+                  {suggestError}
+                </div>
+              )}
+
+              {suggestLoading ? (
+                <div className="py-12 flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Claude is finding the best matches for your profile...</p>
+                </div>
+              ) : suggestions.length > 0 ? (
+                <div className="space-y-5">
+                  {['dream', 'target', 'safety'].map(tier => {
+                    const tierSuggestions = suggestions.map((s, i) => ({ ...s, idx: i })).filter(s => s.tier === tier);
+                    if (!tierSuggestions.length) return null;
+                    const tc = categoryConfig[tier];
+                    return (
+                      <div key={tier}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg"
+                            style={{ background: tc.bg, color: tc.color }}>
+                            {tc.label}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {tierSuggestions.map(s => {
+                            const isSelected = selectedSuggestions.has(s.idx);
+                            return (
+                              <button key={s.idx} onClick={() => toggleSuggestion(s.idx)}
+                                className="w-full text-left p-3.5 rounded-xl transition-all flex items-start gap-3"
+                                style={{
+                                  background: isSelected ? `${tc.bg}` : 'var(--bg-secondary)',
+                                  border: `1.5px solid ${isSelected ? tc.border : 'transparent'}`,
+                                }}>
+                                <span className="flex-shrink-0 mt-0.5" style={{ color: isSelected ? tc.color : 'var(--text-tertiary)' }}>
+                                  {isSelected ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
+                                    <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}>{s.country}</span>
+                                  </div>
+                                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{s.program}</p>
+                                  <p className="text-xs mt-1.5 leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>{s.reason}</p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div className="flex gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <button onClick={closeSuggestModal} className="btn-secondary flex-1">Cancel</button>
+                    <button
+                      onClick={addSelectedSuggestions}
+                      disabled={selectedSuggestions.size === 0 || addingSelected}
+                      className="btn-primary flex-1 flex items-center justify-center gap-1.5">
+                      {addingSelected ? 'Adding...' : selectedSuggestions.size > 0 ? `Add ${selectedSuggestions.size} Selected` : 'Select Universities'}
+                    </button>
+                  </div>
+                </div>
+              ) : !suggestError ? (
+                <div className="py-8 text-center">
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No suggestions available. Please complete your profile first.</p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit University Modal */}
       {editingUniversity && (
         <div className="fixed inset-0 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
@@ -626,6 +807,42 @@ function UniversityAutocomplete({ value, onChange, onSelect }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+const NUDGE_KEY = 'uniapply_profile_nudge_dismissed';
+
+function ProfileCompletionNudge() {
+  const [show, setShow] = useState(false);
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(NUDGE_KEY) === 'true');
+
+  useEffect(() => {
+    if (dismissed) return;
+    apiClient.get('/api/profile').then(res => {
+      const p = res.data;
+      const missing = !p?.workExperience && !p?.communityService && !p?.targetCountries;
+      if (missing) setShow(true);
+    }).catch(() => {});
+  }, [dismissed]);
+
+  if (!show || dismissed) return null;
+
+  return (
+    <div className="flex items-start justify-between gap-3 mb-5 px-4 py-3 rounded-xl"
+      style={{ background: 'rgba(196,98,45,0.07)', border: '1px solid rgba(196,98,45,0.2)' }}>
+      <p className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>
+        <span className="mr-1.5">✨</span>
+        <strong>Get better AI suggestions</strong> — add your work experience, community service, and target countries to your{' '}
+        <a href="/profile" className="underline font-medium" style={{ color: 'var(--accent)' }}>profile</a>.
+      </p>
+      <button onClick={() => { localStorage.setItem(NUDGE_KEY, 'true'); setDismissed(true); setShow(false); }}
+        className="flex-shrink-0 p-0.5 rounded-md transition-colors"
+        style={{ color: 'var(--accent)' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(196,98,45,0.12)'}
+        onMouseLeave={e => e.currentTarget.style.background = ''}>
+        <X size={15} />
+      </button>
     </div>
   );
 }

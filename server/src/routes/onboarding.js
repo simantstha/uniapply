@@ -12,12 +12,9 @@ router.post('/suggest-universities', async (req, res) => {
   try {
     const userId = req.userId;
 
-    const [profile, user] = await Promise.all([
-      prisma.profile.findUnique({ where: { userId } }),
-      prisma.user.findUnique({ where: { id: userId }, select: { degreeLevel: true } }),
-    ]);
+    const profile = await prisma.profile.findUnique({ where: { userId } });
 
-    const degreeLevel = user?.degreeLevel || 'masters';
+    const degreeLevel = profile?.degreeLevel || 'masters';
     const suggestions = await suggestUniversities(profile || {}, degreeLevel);
 
     res.json({ suggestions });

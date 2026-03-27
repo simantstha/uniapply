@@ -16,12 +16,15 @@ const GPA_SCALES = {
   percentage: { min: 0, max: 100,  label: '0–100', placeholder: '85'  },
 };
 
+const TARGET_COUNTRIES = ['USA', 'Canada', 'Australia', 'UK', 'Germany', 'Japan', 'South Korea', 'Netherlands', 'New Zealand'];
+
 const defaultForm = {
   studyLevel: 'masters',
   undergraduateInstitution: '', undergraduateMajor: '', graduationYear: '', gpa: '', gpaScale: 'us_4',
   satScore: '', actScore: '',
   greVerbal: '', greQuant: '', greWriting: '', toeflScore: '', ieltsScore: '',
   fieldOfStudy: '', careerGoals: '', researchInterests: '', workExperienceYears: '', extracurriculars: '',
+  workExperience: '', communityService: '', targetCountries: '',
 };
 
 const LEVEL_LABELS = {
@@ -233,6 +236,29 @@ export default function Profile() {
             {!isUndergrad && (
               <TextArea label="Research Interests" value={form.researchInterests} onChange={set('researchInterests')} placeholder="Topics you want to research or explore" />
             )}
+            <div>
+              <label className="label mb-1.5 block">Target Countries</label>
+              <p className="text-xs mb-2" style={{ color: 'var(--text-tertiary)' }}>Select all countries you're open to applying in</p>
+              <div className="flex flex-wrap gap-2">
+                {TARGET_COUNTRIES.map(country => {
+                  const selected = (form.targetCountries || '').split(',').filter(Boolean).includes(country);
+                  return (
+                    <button key={country} type="button"
+                      onClick={() => {
+                        const current = (form.targetCountries || '').split(',').filter(Boolean);
+                        const next = selected ? current.filter(c => c !== country) : [...current, country];
+                        setForm(f => ({ ...f, targetCountries: next.join(',') }));
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={selected
+                        ? { background: 'rgba(196,98,45,0.12)', color: 'var(--accent)', border: '1.5px solid rgba(196,98,45,0.4)' }
+                        : { background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1.5px solid transparent' }}>
+                      {country}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
         {step === 4 && (
@@ -243,11 +269,21 @@ export default function Profile() {
                 min={0} max={50} error={errors.workExperienceYears} />
             )}
             <TextArea
+              label={isUndergrad ? 'Work & Internship Experience' : 'Work & Internship Experience'}
+              value={form.workExperience} onChange={set('workExperience')}
+              placeholder={isUndergrad
+                ? 'Part-time jobs, internships, shadowing experiences...'
+                : 'Describe your internships, jobs, or research positions — company, role, what you did'} />
+            <TextArea
               label={isUndergrad ? 'Extracurriculars, Clubs & Achievements' : 'Extracurriculars & Achievements'}
               value={form.extracurriculars} onChange={set('extracurriculars')}
               placeholder={isUndergrad
-                ? 'Sports, clubs, competitions, volunteering, part-time work...'
-                : 'Projects, clubs, awards, volunteer work...'} />
+                ? 'Sports, clubs, competitions, awards...'
+                : 'Projects, clubs, competitions, publications, awards...'} />
+            <TextArea
+              label="Community Service & Volunteering"
+              value={form.communityService} onChange={set('communityService')}
+              placeholder="NGO work, tutoring, social initiatives, community programs, teaching..." />
           </div>
         )}
       </div>

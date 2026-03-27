@@ -516,7 +516,7 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {data.recentUniversities.map(u => {
-                const cat = categoryConfig[u.category];
+                const cat = categoryConfig[u.category?.toLowerCase()] ?? categoryConfig.target;
                 return (
                   <div key={u.id} className="flex items-center justify-between group">
                     <div className="flex items-center gap-2.5 min-w-0">
