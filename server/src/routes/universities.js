@@ -296,7 +296,11 @@ router.get('/:id/documents', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, program, degreeLevel, websiteUrl, category, applicationDeadline, status, notes, fundingType } = req.body;
+    const { name, program, degreeLevel, websiteUrl, category, applicationDeadline, status, notes, fundingType, applicationStatus, applicationPortalUrl, applicationPortalType } = req.body;
+    const VALID_APP_STATUSES = ['not_applied', 'applied', 'interview', 'admitted', 'rejected', 'waitlisted'];
+    if (applicationStatus !== undefined && !VALID_APP_STATUSES.includes(applicationStatus)) {
+      return res.status(400).json({ error: 'Invalid applicationStatus value' });
+    }
     const data = {};
     if (name !== undefined) data.name = name;
     if (program !== undefined) data.program = program;
@@ -307,6 +311,9 @@ router.put('/:id', async (req, res) => {
     if (status !== undefined) data.status = status;
     if (notes !== undefined) data.notes = notes;
     if (fundingType !== undefined) data.fundingType = fundingType;
+    if (applicationStatus !== undefined) data.applicationStatus = applicationStatus;
+    if (applicationPortalUrl !== undefined) data.applicationPortalUrl = applicationPortalUrl;
+    if (applicationPortalType !== undefined) data.applicationPortalType = applicationPortalType;
     const university = await prisma.university.updateMany({
       where: { id: parseInt(req.params.id), userId: req.userId },
       data,
@@ -322,6 +329,10 @@ router.put('/:id', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const { status, notes, fundingType, applicationStatus, applicationPortalUrl, applicationPortalType } = req.body;
+    const VALID_APP_STATUSES = ['not_applied', 'applied', 'interview', 'admitted', 'rejected', 'waitlisted'];
+    if (applicationStatus !== undefined && !VALID_APP_STATUSES.includes(applicationStatus)) {
+      return res.status(400).json({ error: 'Invalid applicationStatus value' });
+    }
     const data = {};
     if (status !== undefined) data.status = status;
     if (notes !== undefined) data.notes = notes;
