@@ -9,6 +9,7 @@ import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
   CheckCircle, Clock, User, ChevronRight,
   PenLine, FolderOpen, Check, Circle, CalendarClock, X, Mail,
+  AlertTriangle, Clock3, BookOpen,
 } from 'lucide-react';
 
 const statusConfig = {
@@ -89,6 +90,7 @@ function getJourneySteps(data) {
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [overview, setOverview] = useState(null);
   const [error, setError] = useState(false);
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [upcomingMilestones] = useState(() => getUpcomingMilestones(3));
@@ -112,9 +114,13 @@ export default function Dashboard() {
 
   const fetchStats = () => {
     setError(false);
-    apiClient.get('/api/dashboard/stats')
-      .then(res => setData(res.data))
-      .catch(() => setError(true));
+    Promise.all([
+      apiClient.get('/api/dashboard/stats'),
+      apiClient.get('/api/dashboard/overview'),
+    ]).then(([statsRes, overviewRes]) => {
+      setData(statsRes.data);
+      setOverview(overviewRes.data);
+    }).catch(() => setError(true));
   };
 
   useEffect(() => {
@@ -198,6 +204,119 @@ export default function Dashboard() {
       {/* Error state */}
       {error && (
         <ErrorCard message="Couldn't load your stats" onRetry={fetchStats} />
+      )}
+
+      {/* ── Mission Control ── */}
+      {overview && overview.universities.length > 0 && (
+        <>
+          {/* Today's Actions */}
+          {overview.actions.length > 0 && (
+            <div className="card shadow-apple-sm overflow-hidden">
+              <div className="px-5 pt-4 pb-3 border-b flex items-center gap-2" style={{ borderColor: 'var(--border-subtle)' }}>
+                <Clock3 size={14} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Today's Actions</p>
+              </div>
+              <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+                {overview.actions.map((action, i) => {
+                  const iconMap = {
+                    sop: <BookOpen size={13} strokeWidth={1.8} />,
+                    critique: <Sparkles size={13} strokeWidth={1.8} />,
+                    lor: <Check size={13} strokeWidth={2} />,
+                    deadline: <Calendar size={13} strokeWidth={1.8} />,
+                    alert: <AlertTriangle size={13} strokeWidth={1.8} />,
+                  };
+                  const isUrgent = action.urgency <= 14;
+                  const iconColor = action.icon === 'alert' ? '#FF3B30' : isUrgent ? 'var(--accent)' : 'var(--text-secondary)';
+                  return (
+                    <Link key={i} to={action.to}
+                      className="px-5 py-3 flex items-center gap-3 transition-all hover:opacity-80">
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: action.icon === 'alert' ? 'rgba(255,59,48,0.1)' : isUrgent ? 'var(--accent-subtle)' : 'var(--bg-secondary)', color: iconColor }}>
+                        {iconMap[action.icon]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{action.text}</p>
+                      </div>
+                      {action.subtext && (
+                        <span className="text-xs font-semibold flex-shrink-0 px-2 py-0.5 rounded-full"
+                          style={isUrgent
+                            ? { background: 'rgba(255,59,48,0.1)', color: '#FF3B30' }
+                            : { background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}>
+                          {action.subtext}
+                        </span>
+                      )}
+                      <ChevronRight size={13} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* University Status Board */}
+          <div className="card shadow-apple-sm overflow-hidden">
+            <div className="px-5 pt-4 pb-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-subtle)' }}>
+              <div className="flex items-center gap-2">
+                <Building2 size={14} strokeWidth={1.8} style={{ color: 'var(--text-secondary)' }} />
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Application Status</p>
+              </div>
+              <Link to="/universities" className="text-xs font-medium flex items-center gap-0.5" style={{ color: 'var(--accent)' }}>
+                Manage <ChevronRight size={12} />
+              </Link>
+            </div>
+            <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+              {overview.universities.map(u => {
+                const riskColors = {
+                  overdue: { dot: '#FF3B30', badge: 'rgba(255,59,48,0.1)', text: '#FF3B30', label: 'Overdue' },
+                  red:     { dot: '#FF3B30', badge: 'rgba(255,59,48,0.1)', text: '#FF3B30', label: `${u.daysLeft}d left` },
+                  yellow:  { dot: '#D4A843', badge: 'rgba(212,168,67,0.1)', text: '#D4A843', label: `${u.daysLeft}d left` },
+                  green:   { dot: '#34C759', badge: 'rgba(52,199,89,0.08)', text: '#34C759', label: `${u.daysLeft}d left` },
+                  none:    { dot: 'var(--border)', badge: 'var(--bg-secondary)', text: 'var(--text-tertiary)', label: 'No deadline' },
+                };
+                const risk = riskColors[u.risk];
+                const categoryDot = { dream: '#7C3AED', target: '#3B82F6', safety: '#16A34A' }[u.category] || 'var(--text-tertiary)';
+                const sopLabel = { none: 'No SOP', draft: 'Draft', reviewed: 'Reviewed' }[u.sopStatus];
+                const sopColor = { none: 'var(--text-tertiary)', draft: '#D4A843', reviewed: '#34C759' }[u.sopStatus];
+
+                return (
+                  <Link key={u.id} to={`/sop/${u.id}`}
+                    className="px-5 py-3.5 flex items-center gap-3 transition-all hover:opacity-80">
+                    {/* Risk dot */}
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: risk.dot }} />
+
+                    {/* Name + program */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: categoryDot }} />
+                      </div>
+                      <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
+                    </div>
+
+                    {/* SOP badge */}
+                    <span className="hidden sm:block text-xs font-medium flex-shrink-0"
+                      style={{ color: sopColor }}>
+                      {sopLabel}
+                    </span>
+
+                    {/* LOR */}
+                    {u.lorTotal > 0 && (
+                      <span className="hidden sm:block text-xs flex-shrink-0" style={{ color: u.lorConfirmed === u.lorTotal ? '#34C759' : 'var(--text-tertiary)' }}>
+                        LOR {u.lorConfirmed}/{u.lorTotal}
+                      </span>
+                    )}
+
+                    {/* Deadline badge */}
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: risk.badge, color: risk.text }}>
+                      {risk.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Journey Panel — only render once data is loaded */}
