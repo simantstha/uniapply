@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { getUpcomingMilestones } from './Timeline';
 import ErrorCard from '../components/ErrorCard';
+import ApplicationStatusPicker from '../components/ApplicationStatusPicker';
 import { DashboardSkeleton } from '../components/common/Skeleton';
 import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
@@ -11,6 +12,8 @@ import {
   PenLine, FolderOpen, Check, Circle, CalendarClock, X, Mail,
   AlertTriangle, Clock3, BookOpen,
 } from 'lucide-react';
+import CostCalculatorBanner from '../components/CostCalculatorBanner';
+import PostAdmissionDrawer from '../components/PostAdmissionDrawer';
 
 const statusConfig = {
   not_started: { label: 'Not Started', color: 'var(--text-tertiary)', bg: 'var(--bg-secondary)' },
@@ -94,9 +97,35 @@ export default function Dashboard() {
   const [error, setError] = useState(false);
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [upcomingMilestones] = useState(() => getUpcomingMilestones(3));
+  const [universities, setUniversities] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [postAdmissionUniversity, setPostAdmissionUniversity] = useState(null);
+  const [waitlistTipId, setWaitlistTipId] = useState(null);
+  const [celebratedIds, setCelebratedIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('uniapply_celebrated') || '[]'); } catch { return []; }
+  });
+
+  const handleAppStatusChange = async (universityId, newStatus) => {
+    try {
+      const res = await apiClient.patch(`/api/universities/${universityId}`, {
+        applicationStatus: newStatus,
+      });
+      setUniversities(prev =>
+        prev.map(u => u.id === universityId ? { ...u, applicationStatus: res.data.applicationStatus } : u)
+      );
+      if (newStatus === 'admitted') {
+        if (!celebratedIds.includes(universityId)) {
+          setPostAdmissionUniversity(res.data);
+          const newCelebrated = [...celebratedIds, universityId];
+          setCelebratedIds(newCelebrated);
+          localStorage.setItem('uniapply_celebrated', JSON.stringify(newCelebrated));
+        }
+      }
+    } catch { /* silent */ }
+  };
 
   const handleResendVerification = async () => {
     setResendingVerification(true);
@@ -117,9 +146,13 @@ export default function Dashboard() {
     Promise.all([
       apiClient.get('/api/dashboard/stats'),
       apiClient.get('/api/dashboard/overview'),
-    ]).then(([statsRes, overviewRes]) => {
+      apiClient.get('/api/universities'),
+      apiClient.get('/api/profile'),
+    ]).then(([statsRes, overviewRes, uniRes, profileRes]) => {
       setData(statsRes.data);
       setOverview(overviewRes.data);
+      setUniversities(uniRes.data);
+      setProfile(profileRes.data);
     }).catch(() => setError(true));
   };
 
@@ -575,6 +608,126 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── Cost Calculator ── */}
+      <CostCalculatorBanner universities={universities} profile={profile} />
+
+      {/* ── Application Status Panels ── */}
+      {universities.length > 0 && (() => {
+        const ACTIVE_STATUSES = ['not_applied', 'applied', 'interview'];
+        const DECISION_STATUSES = ['admitted', 'rejected', 'waitlisted'];
+        const active = universities
+          .filter(u => ACTIVE_STATUSES.includes(u.applicationStatus || 'not_applied'))
+          .sort((a, b) => {
+            if (a.applicationDeadline && b.applicationDeadline)
+              return new Date(a.applicationDeadline) - new Date(b.applicationDeadline);
+            if (a.applicationDeadline) return -1;
+            if (b.applicationDeadline) return 1;
+            return 0;
+          });
+        const decisions = universities
+          .filter(u => DECISION_STATUSES.includes(u.applicationStatus || 'not_applied'))
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+        return (
+          <div className="space-y-4">
+            {active.length > 0 && (
+              <div className="card p-5">
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  Active Applications
+                </h3>
+                <div className="space-y-2">
+                  {active.map(u => (
+                    <div key={u.id} className="flex items-center justify-between gap-3 py-2"
+                      style={{ borderBottom: '1px solid var(--border)' }}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {u.applicationDeadline && (
+                          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                            {new Date(u.applicationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                        <ApplicationStatusPicker
+                          value={u.applicationStatus || 'not_applied'}
+                          onChange={(s) => handleAppStatusChange(u.id, s)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {decisions.length > 0 && (
+              <div className="card p-5">
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  Decisions
+                </h3>
+                {decisions.filter(u => u.applicationStatus === 'admitted').length >= 2 && (
+                  <div className="mb-3 px-3 py-2.5 rounded-xl flex items-center gap-2"
+                    style={{ background: 'rgba(52,199,89,0.08)', border: '1px solid rgba(52,199,89,0.2)' }}>
+                    <Sparkles size={13} style={{ color: '#34C759', flexShrink: 0 }} strokeWidth={1.6} />
+                    <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
+                      You're admitted to {decisions.filter(u => u.applicationStatus === 'admitted').length} schools.{' '}
+                      <Link to="/compare" style={{ color: '#34C759', fontWeight: 600 }}>
+                        Compare them before accepting →
+                      </Link>
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {decisions.map(u => (
+                    <div key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <div className="flex items-center justify-between gap-3 py-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                          <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <ApplicationStatusPicker
+                            value={u.applicationStatus || 'not_applied'}
+                            onChange={(s) => handleAppStatusChange(u.id, s)}
+                          />
+                          {u.applicationStatus === 'admitted' && (
+                            <button
+                              onClick={() => setPostAdmissionUniversity(u)}
+                              className="text-xs px-2 py-1 rounded-lg"
+                              style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759', border: '1px solid rgba(52,199,89,0.2)', cursor: 'pointer' }}>
+                              View next steps
+                            </button>
+                          )}
+                          {u.applicationStatus === 'rejected' && (
+                            <span className="text-xs" style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                              Consider emailing admissions for feedback
+                            </span>
+                          )}
+                          {u.applicationStatus === 'waitlisted' && (
+                            <button
+                              onClick={() => setWaitlistTipId(u.id === waitlistTipId ? null : u.id)}
+                              className="text-xs"
+                              style={{ background: 'none', border: 'none', color: '#D4A843', cursor: 'pointer', fontWeight: 500 }}>
+                              How to respond →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {u.applicationStatus === 'waitlisted' && waitlistTipId === u.id && (
+                        <div className="w-full mt-2 mb-2 px-3 py-2.5 rounded-xl text-xs"
+                          style={{ background: 'rgba(212,168,67,0.08)', color: 'var(--text-secondary)', border: '1px solid rgba(212,168,67,0.2)' }}>
+                          Write a <strong>letter of continued interest</strong>: reaffirm your enthusiasm, share any new achievements since applying, and confirm you'll attend if accepted. Keep it under 300 words. Email the admissions office directly.
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Deadlines + Recent */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Upcoming deadlines */}
@@ -659,6 +812,13 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {postAdmissionUniversity && (
+        <PostAdmissionDrawer
+          university={postAdmissionUniversity}
+          onClose={() => setPostAdmissionUniversity(null)}
+        />
+      )}
     </div>
   );
 }
