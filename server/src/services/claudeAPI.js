@@ -108,13 +108,33 @@ The email should feel like it was written by a real person who knows ${recommend
 Keep it short — 120-160 words. Start with "Subject:" then a blank line then the body.
 Return only the email, no commentary.`;
 
-  const message = await anthropic.messages.create({
+  const draft = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 600,
     messages: [{ role: 'user', content: prompt }],
   });
 
-  return message.content[0].text;
+  const draftText = draft.content[0].text;
+
+  // Second pass — humanize to reduce AI detection patterns
+  const humanized = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 600,
+    messages: [{ role: 'user', content: `Rewrite this email to sound less AI-generated while keeping the same meaning and length.
+
+Rules:
+- Break up any overly smooth or balanced sentence pairs
+- Add one small natural imperfection (a minor repetition, a slightly abrupt transition, or an understated phrase)
+- Replace any remaining formal connectors ("Furthermore", "Additionally", "In conclusion") with simpler ones or none
+- Keep contractions where natural
+- Do not change the subject line, the names, the universities, or the deadline
+- Return only the rewritten email, no commentary
+
+Email to rewrite:
+${draftText}` }],
+  });
+
+  return humanized.content[0].text;
 }
 
 export async function generateCritique(sop, profile, university) {
