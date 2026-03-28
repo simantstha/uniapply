@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { getUpcomingMilestones } from './Timeline';
 import ErrorCard from '../components/ErrorCard';
+import ApplicationStatusPicker, { APPLICATION_STATUSES } from '../components/ApplicationStatusPicker';
 import { DashboardSkeleton } from '../components/common/Skeleton';
 import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
@@ -94,9 +95,21 @@ export default function Dashboard() {
   const [error, setError] = useState(false);
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [upcomingMilestones] = useState(() => getUpcomingMilestones(3));
+  const [universities, setUniversities] = useState([]);
   const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+
+  const handleAppStatusChange = async (universityId, newStatus) => {
+    try {
+      const res = await apiClient.patch(`/api/universities/${universityId}`, {
+        applicationStatus: newStatus,
+      });
+      setUniversities(prev =>
+        prev.map(u => u.id === universityId ? { ...u, applicationStatus: res.data.applicationStatus } : u)
+      );
+    } catch { /* silent */ }
+  };
 
   const handleResendVerification = async () => {
     setResendingVerification(true);
@@ -117,9 +130,11 @@ export default function Dashboard() {
     Promise.all([
       apiClient.get('/api/dashboard/stats'),
       apiClient.get('/api/dashboard/overview'),
-    ]).then(([statsRes, overviewRes]) => {
+      apiClient.get('/api/universities'),
+    ]).then(([statsRes, overviewRes, uniRes]) => {
       setData(statsRes.data);
       setOverview(overviewRes.data);
+      setUniversities(uniRes.data);
     }).catch(() => setError(true));
   };
 
@@ -574,6 +589,81 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ── Application Status Panels ── */}
+      {universities.length > 0 && (() => {
+        const ACTIVE_STATUSES = ['not_applied', 'applied', 'interview'];
+        const DECISION_STATUSES = ['admitted', 'rejected', 'waitlisted'];
+        const active = universities
+          .filter(u => ACTIVE_STATUSES.includes(u.applicationStatus || 'not_applied'))
+          .sort((a, b) => {
+            if (a.applicationDeadline && b.applicationDeadline)
+              return new Date(a.applicationDeadline) - new Date(b.applicationDeadline);
+            if (a.applicationDeadline) return -1;
+            if (b.applicationDeadline) return 1;
+            return 0;
+          });
+        const decisions = universities
+          .filter(u => DECISION_STATUSES.includes(u.applicationStatus || 'not_applied'))
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+        return (
+          <div className="space-y-4">
+            {active.length > 0 && (
+              <div className="card p-5">
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  Active Applications
+                </h3>
+                <div className="space-y-2">
+                  {active.map(u => (
+                    <div key={u.id} className="flex items-center justify-between gap-3 py-2"
+                      style={{ borderBottom: '1px solid var(--border)' }}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {u.applicationDeadline && (
+                          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                            {new Date(u.applicationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                        <ApplicationStatusPicker
+                          value={u.applicationStatus || 'not_applied'}
+                          onChange={(s) => handleAppStatusChange(u.id, s)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {decisions.length > 0 && (
+              <div className="card p-5">
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  Decisions
+                </h3>
+                <div className="space-y-2">
+                  {decisions.map(u => (
+                    <div key={u.id} className="flex items-center justify-between gap-3 py-2"
+                      style={{ borderBottom: '1px solid var(--border)' }}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
+                      </div>
+                      <ApplicationStatusPicker
+                        value={u.applicationStatus || 'not_applied'}
+                        onChange={(s) => handleAppStatusChange(u.id, s)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Deadlines + Recent */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

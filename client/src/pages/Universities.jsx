@@ -5,6 +5,7 @@ import apiClient from '../api/client';
 import ErrorCard from '../components/ErrorCard';
 import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows, Sparkles, CheckCircle2, Circle } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
+import ApplicationStatusPicker from '../components/ApplicationStatusPicker';
 
 const PHD_BANNER_KEY = 'uniapply_phd_banner_dismissed';
 
@@ -171,6 +172,19 @@ export default function Universities() {
   const handleDelete = async (id) => {
     await apiClient.delete(`/api/universities/${id}`);
     fetchData();
+  };
+
+  const handleApplicationStatusChange = async (universityId, newStatus) => {
+    try {
+      const res = await apiClient.patch(`/api/universities/${universityId}`, {
+        applicationStatus: newStatus,
+      });
+      setUniversities(prev =>
+        prev.map(u => u.id === universityId ? { ...u, applicationStatus: res.data.applicationStatus } : u)
+      );
+    } catch {
+      // silently ignore — status reverts on refresh
+    }
   };
 
   const closeModal = () => { setShowModal(false); setError(''); setForm(emptyForm); };
@@ -406,6 +420,10 @@ export default function Universities() {
 
                     <div className="flex items-center gap-2 flex-wrap mb-3">
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
+                      <ApplicationStatusPicker
+                        value={u.applicationStatus || 'not_applied'}
+                        onChange={(newStatus) => handleApplicationStatusChange(u.id, newStatus)}
+                      />
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: dl.bg, color: dl.color }}>{dl.label}</span>
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: stat.bg, color: stat.color }}>{stat.label}</span>
                     </div>
