@@ -172,7 +172,7 @@ export default function Landing() {
           className="text-lg md:text-xl mb-10 max-w-2xl mx-auto"
           style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
           AI university suggestions, SOP critique, LOR tracking, and deadline management —
-          everything consultancies charge <strong style={{ color: 'var(--text-primary)' }}>NPR 60,000</strong> for, completely free.
+          everything consultancies charge <strong style={{ color: 'var(--text-primary)' }}>NPR 60,000</strong> for, free during early access.
         </motion.p>
 
         <motion.div
@@ -196,7 +196,7 @@ export default function Landing() {
         <motion.div
           variants={ST(0.5)} initial="hidden" animate="visible"
           className="flex items-center justify-center gap-6 mt-10 flex-wrap">
-          {['Free forever', 'No credit card', 'AI-powered'].map(label => (
+          {['Free early access', 'No credit card', 'AI-powered'].map(label => (
             <span key={label} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
               <CheckCircle size={13} strokeWidth={2} style={{ color: 'var(--accent)' }} />
               {label}
@@ -320,7 +320,7 @@ export default function Landing() {
               <span style={{ color: 'var(--accent)' }}>Start planning.</span>
             </h2>
             <p className="text-base mb-8" style={{ color: 'var(--text-secondary)' }}>
-              Free forever. No consultancy fees. No credit card.
+              Free during early access. No credit card required.
             </p>
             <Link to="/signup"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
