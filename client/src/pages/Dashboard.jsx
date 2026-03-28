@@ -116,9 +116,8 @@ export default function Dashboard() {
         prev.map(u => u.id === universityId ? { ...u, applicationStatus: res.data.applicationStatus } : u)
       );
       if (newStatus === 'admitted') {
-        const uni = universities.find(u => u.id === universityId);
-        if (uni && !celebratedIds.includes(universityId)) {
-          setPostAdmissionUniversity({ ...uni, applicationStatus: 'admitted' });
+        if (!celebratedIds.includes(universityId)) {
+          setPostAdmissionUniversity(res.data);
           const newCelebrated = [...celebratedIds, universityId];
           setCelebratedIds(newCelebrated);
           localStorage.setItem('uniapply_celebrated', JSON.stringify(newCelebrated));
