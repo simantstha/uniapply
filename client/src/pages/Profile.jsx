@@ -171,7 +171,7 @@ export default function Profile() {
                 <div className="flex items-center justify-between mb-1">
                   <label className="label">GPA</label>
                   <div className="flex gap-1">
-                    {[['us_4','4.0'],['cgpa_10',<><GlossaryTooltip term="CGPA" /></>],['percentage','%']].map(([key, lbl]) => (
+                    {[['us_4','4.0'],['cgpa_10','CGPA'],['percentage','%']].map(([key, lbl]) => (
                       <button key={key} type="button" onClick={() => setGpaScale(key)}
                         className="px-2 py-0.5 rounded-md text-xs font-medium transition-all"
                         style={form.gpaScale === key
@@ -314,7 +314,7 @@ function SectionTitle({ children }) {
 function Field({ label, value, onChange, placeholder, type = 'text', min, max, step, error }) {
   return (
     <div>
-      <label className="label">{label}</label>
+      <div className="label">{label}</div>
       <input
         type={type} value={value} onChange={onChange} placeholder={placeholder}
         min={min} max={max} step={step}
@@ -330,7 +330,7 @@ function FieldWithTooltip({ label, value, onChange, placeholder, type = 'text', 
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-1">
-        <label className="label">{label}</label>
+        <div className="label">{label}</div>
         {subLabel && <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>({subLabel})</span>}
       </div>
       <input
