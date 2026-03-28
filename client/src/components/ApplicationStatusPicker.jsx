@@ -13,6 +13,8 @@ export const APPLICATION_STATUSES = [
 
 export default function ApplicationStatusPicker({ value = 'not_applied', onChange, disabled }) {
   const [open, setOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
   const ref = useRef(null);
 
   const current = APPLICATION_STATUSES.find(s => s.value === value) || APPLICATION_STATUSES[0];
@@ -25,11 +27,21 @@ export default function ApplicationStatusPicker({ value = 'not_applied', onChang
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  function handleOpen() {
+    if (disabled) return;
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen(o => !o);
+  }
+
   return (
     <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
       <button
+        ref={buttonRef}
         disabled={disabled}
-        onClick={() => setOpen(o => !o)}
+        onClick={handleOpen}
         style={{
           display: 'flex', alignItems: 'center', gap: 4,
           padding: '3px 8px', borderRadius: 20,
@@ -45,8 +57,8 @@ export default function ApplicationStatusPicker({ value = 'not_applied', onChang
 
       {open && (
         <div style={{
-          position: 'absolute', top: '100%', left: 0, zIndex: 50, marginTop: 4,
-          background: 'var(--bg-primary)', border: '1px solid var(--border)',
+          position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, zIndex: 9999,
+          background: 'var(--bg-elevated)', border: '1px solid var(--border)',
           borderRadius: 10, padding: 4, minWidth: 140,
           boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
         }}>

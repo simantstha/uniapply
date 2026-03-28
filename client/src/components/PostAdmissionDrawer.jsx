@@ -1,4 +1,6 @@
 // client/src/components/PostAdmissionDrawer.jsx
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ExternalLink, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -77,22 +79,44 @@ function getSteps(enrollmentDate) {
 }
 
 export default function PostAdmissionDrawer({ university, onClose }) {
+  const [visible, setVisible] = useState(false);
+  const [rowsVisible, setRowsVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+    const t = setTimeout(() => setRowsVisible(true), 250);
+    return () => clearTimeout(t);
+  }, []);
+
+  function handleClose() {
+    setVisible(false);
+    setTimeout(onClose, 280);
+  }
+
   if (!university) return null;
 
   const enrollmentDate = localStorage.getItem('uniapply_enrollment_date');
   const steps = getSteps(enrollmentDate);
 
-  return (
+  return createPortal(
     <>
-      <div onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }} />
-
+      <div
+        onClick={handleClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 40,
+          background: 'rgba(0,0,0,0.4)',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 280ms ease',
+        }}
+      />
       <div style={{
-        position: 'fixed', right: 0, top: 0, bottom: 0, width: '100%', maxWidth: 440,
-        background: 'var(--bg-primary)', borderLeft: '1px solid var(--border)',
+        position: 'fixed', right: 0, top: 0, height: '100dvh', width: '100%', maxWidth: 440,
+        background: 'var(--bg-elevated)', borderLeft: '1px solid var(--border)',
         zIndex: 50, display: 'flex', flexDirection: 'column',
         boxShadow: '-4px 0 30px rgba(0,0,0,0.15)',
         overflowY: 'auto',
+        transform: visible ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
       }}>
         <div className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-start justify-between gap-3">
@@ -110,7 +134,7 @@ export default function PostAdmissionDrawer({ university, onClose }) {
                 {university.program}
               </p>
             </div>
-            <button onClick={onClose}
+            <button onClick={handleClose}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', flexShrink: 0 }}>
               <X size={18} />
             </button>
@@ -134,7 +158,11 @@ export default function PostAdmissionDrawer({ university, onClose }) {
           </h3>
           {steps.map((step, i) => (
             <div key={step.id} className="flex gap-3 pb-4"
-              style={{ borderBottom: i < steps.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              style={{
+                borderBottom: i < steps.length - 1 ? '1px solid var(--border)' : 'none',
+                opacity: rowsVisible ? 1 : 0,
+                animation: rowsVisible ? `rowSlideIn 320ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 60}ms both` : 'none',
+              }}>
               <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5"
                 style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759' }}>
                 {i + 1}
@@ -163,6 +191,7 @@ export default function PostAdmissionDrawer({ university, onClose }) {
           ))}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

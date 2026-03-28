@@ -1,5 +1,6 @@
 // client/src/components/PreflightDrawer.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, ExternalLink, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -9,6 +10,25 @@ export default function PreflightDrawer({ university, onClose, onMarkApplied }) 
   const [checklist, setChecklist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [rowsVisible, setRowsVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  // Trigger row animations after drawer slides in
+  useEffect(() => {
+    if (!loading) {
+      const t = setTimeout(() => setRowsVisible(true), 200);
+      return () => clearTimeout(t);
+    }
+  }, [loading]);
+
+  function handleClose() {
+    setVisible(false);
+    setTimeout(onClose, 280);
+  }
 
   useEffect(() => {
     if (!university) return;
@@ -53,17 +73,24 @@ export default function PreflightDrawer({ university, onClose, onMarkApplied }) 
 
   const allDone = checks.every(c => c.done);
 
-  return (
+  return createPortal(
     <>
       <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }}
+        onClick={handleClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 40,
+          background: 'rgba(0,0,0,0.4)',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 280ms ease',
+        }}
       />
       <div style={{
-        position: 'fixed', right: 0, top: 0, bottom: 0, width: '100%', maxWidth: 420,
-        background: 'var(--bg-primary)', borderLeft: '1px solid var(--border)',
+        position: 'fixed', right: 0, top: 0, height: '100dvh', width: '100%', maxWidth: 420,
+        background: 'var(--bg-elevated)', borderLeft: '1px solid var(--border)',
         zIndex: 50, display: 'flex', flexDirection: 'column',
         boxShadow: '-4px 0 30px rgba(0,0,0,0.15)',
+        transform: visible ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
       }}>
         <div className="flex items-center justify-between p-5"
           style={{ borderBottom: '1px solid var(--border)' }}>
@@ -75,7 +102,7 @@ export default function PreflightDrawer({ university, onClose, onMarkApplied }) 
               {university.name}
             </p>
           </div>
-          <button onClick={onClose}
+          <button onClick={handleClose}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
             <X size={18} />
           </button>
@@ -91,9 +118,13 @@ export default function PreflightDrawer({ university, onClose, onMarkApplied }) 
               <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Checking…</div>
             ) : (
               <div className="space-y-2">
-                {checks.map(c => (
+                {checks.map((c, i) => (
                   <div key={c.label} className="flex items-center justify-between gap-3 py-2"
-                    style={{ borderBottom: '1px solid var(--border)' }}>
+                    style={{
+                      borderBottom: '1px solid var(--border)',
+                      opacity: rowsVisible ? 1 : 0,
+                      animation: rowsVisible ? `rowSlideIn 320ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 70}ms both` : 'none',
+                    }}>
                     <div className="flex items-center gap-2">
                       {c.done
                         ? <CheckCircle size={15} style={{ color: '#34C759', flexShrink: 0 }} />
@@ -178,6 +209,7 @@ export default function PreflightDrawer({ university, onClose, onMarkApplied }) 
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

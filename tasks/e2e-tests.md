@@ -169,12 +169,38 @@ Last run: 2026-03-28
 
 ---
 
+## 12. User Journey — Application Status & Post-Admission
+
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| 12.1 | Dashboard — Active / Decisions panels render | ✅ | Active panel shows 3 Not Applied schools; Decisions panel appears with "Admitted" pill after status change |
+| 12.2 | Cost calculator banner visible on dashboard | ✅ | "Application Cost Estimate — 3 schools, $235–$295" banner present |
+| 12.3 | Cost calculator expands/collapses | ✅ | Per-school breakdown (ASU $90, UofT $110, CMU $95) + 4 cost-cutting tips shown |
+| 12.4 | Application status pill visible on university card (Universities page) | ✅ | "Not Applied" pill on each card |
+| 12.5 | Status picker dropdown opens + lists all 6 statuses | ✅ | Dropdown shows Not Applied / Applied / Interview / Admitted / Rejected / Waitlisted |
+| 12.6 | Status change persists (PATCH saved to server) | ✅ | CMU moved to Decisions panel with "Admitted" pill after selection |
+| 12.7 | "Ready to Apply →" button visible when status is not_applied | ✅ | Button present on all 3 cards on Universities page |
+| 12.8 | Pre-flight drawer opens on "Ready to Apply" click | ✅ | Drawer slides in from right with animation |
+| 12.9 | Pre-flight checklist shows 4 items with ✅ / ⚠️ | ✅ | SOP, LOR, Transcript, Test scores — all ⚠️ with fix links |
+| 12.10 | Pre-flight — incomplete items show fix links | ✅ | Open SOP Editor / Manage LORs / Upload Documents links present |
+| 12.11 | Pre-flight — portal section shows badge + Go to Portal button | ✅ | "Direct Portal" badge + "Go to Application Portal" button for CMU |
+| 12.12 | Pre-flight — "Mark as Applied" confirmation flow | ✅ | "Mark this as Applied?" → "Yes, I'm applying" / "Just browsing" buttons shown |
+| 12.13 | Admitted status → post-admission drawer opens automatically | ✅ | Drawer fires immediately when Admitted selected from dashboard status picker |
+| 12.14 | Post-admission drawer — 9 visa steps rendered with timeline dates | ✅ | All 9 steps shown with target months (Dec 2026 → Jun 2027) based on enrollment date |
+| 12.15 | Post-admission drawer — "View next steps" button on admitted card | ✅ | Button visible on CMU card in Decisions panel |
+| 12.16 | Rejected status — feedback tip visible on dashboard | ⬜ | Not tested this run |
+| 12.17 | Waitlisted status — letter of continued interest tips | ⬜ | Not tested this run |
+| 12.18 | Multiple admissions — compare nudge shown | ⬜ | Requires 2+ schools set to Admitted — not tested this run |
+
+---
+
 ## Test Run Results
 
 | Run | Date | Tester | Pass | Fail | Partial/Untested | Notes |
 |-----|------|--------|------|------|---------|-------|
 | 1 | 2026-03-28 | Claude E2E (Playwright) | 42 | 0 | 22 untested, 1 warning | Full happy-path run on fresh test account. No failures. 1 bug: React `validateDOMNesting` warning on Profile/Test Scores tab (button-in-button in tooltip markup). Untested = SMTP flows, Compare page, file upload, mobile nav, PhD-specific paths. |
 | 2 | 2026-03-28 | Claude Mobile (Playwright 390×844) | 7 | 0 | — | Mobile responsive check on iPhone 15 Pro viewport. All 7 pages (Dashboard, Universities, SOPWorkshop, SOP Critique, Documents, Profile, Timeline) render correctly. Bottom nav present on all pages. validateDOMNesting warning still present on Profile. |
+| 3 | 2026-03-28 | Claude E2E (Playwright) | 15 | 0 | 3 untested | User journey gaps feature (Section 12). 15/18 pass. Untested: rejected guidance (12.16), waitlisted tips (12.17), multiple admissions nudge (12.18). All core flows — status picker, cost calculator, pre-flight drawer, post-admission visa checklist — verified. |
 
 ---
 
