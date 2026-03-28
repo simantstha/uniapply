@@ -13,6 +13,7 @@ import {
   AlertTriangle, Clock3, BookOpen,
 } from 'lucide-react';
 import CostCalculatorBanner from '../components/CostCalculatorBanner';
+import PostAdmissionDrawer from '../components/PostAdmissionDrawer';
 
 const statusConfig = {
   not_started: { label: 'Not Started', color: 'var(--text-tertiary)', bg: 'var(--bg-secondary)' },
@@ -101,6 +102,10 @@ export default function Dashboard() {
   const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [postAdmissionUniversity, setPostAdmissionUniversity] = useState(null);
+  const [celebratedIds, setCelebratedIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('uniapply_celebrated') || '[]'); } catch { return []; }
+  });
 
   const handleAppStatusChange = async (universityId, newStatus) => {
     try {
@@ -110,6 +115,15 @@ export default function Dashboard() {
       setUniversities(prev =>
         prev.map(u => u.id === universityId ? { ...u, applicationStatus: res.data.applicationStatus } : u)
       );
+      if (newStatus === 'admitted') {
+        const uni = universities.find(u => u.id === universityId);
+        if (uni && !celebratedIds.includes(universityId)) {
+          setPostAdmissionUniversity({ ...uni, applicationStatus: 'admitted' });
+          const newCelebrated = [...celebratedIds, universityId];
+          setCelebratedIds(newCelebrated);
+          localStorage.setItem('uniapply_celebrated', JSON.stringify(newCelebrated));
+        }
+      }
     } catch { /* silent */ }
   };
 
@@ -659,10 +673,20 @@ export default function Dashboard() {
                         <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
                         <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
                       </div>
-                      <ApplicationStatusPicker
-                        value={u.applicationStatus || 'not_applied'}
-                        onChange={(s) => handleAppStatusChange(u.id, s)}
-                      />
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <ApplicationStatusPicker
+                          value={u.applicationStatus || 'not_applied'}
+                          onChange={(s) => handleAppStatusChange(u.id, s)}
+                        />
+                        {u.applicationStatus === 'admitted' && (
+                          <button
+                            onClick={() => setPostAdmissionUniversity(u)}
+                            className="text-xs px-2 py-1 rounded-lg"
+                            style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759', border: '1px solid rgba(52,199,89,0.2)', cursor: 'pointer' }}>
+                            View next steps
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -756,6 +780,13 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {postAdmissionUniversity && (
+        <PostAdmissionDrawer
+          university={postAdmissionUniversity}
+          onClose={() => setPostAdmissionUniversity(null)}
+        />
+      )}
     </div>
   );
 }
