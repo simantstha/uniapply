@@ -1,0 +1,307 @@
+import { Link } from 'react-router-dom';
+import { motion, useInView } from 'framer-motion';
+import { useRef } from 'react';
+import {
+  Sparkles, FileText, ClipboardList, UserCheck,
+  BarChart2, Calendar, ArrowRight, CheckCircle, Globe, BookOpen
+} from 'lucide-react';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+};
+
+const stagger = (delay = 0) => ({
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay } },
+});
+
+function Section({ children, className = '' }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+  return (
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      className={className}>
+      {children}
+    </motion.section>
+  );
+}
+
+const features = [
+  {
+    icon: Sparkles,
+    title: 'AI University Suggestions',
+    desc: 'Get Dream, Target, and Safety school recommendations tailored to your GPA, test scores, and goals — not a generic list.',
+  },
+  {
+    icon: FileText,
+    title: 'SOP Workshop',
+    desc: 'Write, critique, and refine your statement of purpose with AI feedback scored across clarity, fit, and narrative.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Application Checklist',
+    desc: 'Per-university checklists enriched with real program requirements — GRE minimums, TOEFL cutoffs, credential evaluation.',
+  },
+  {
+    icon: UserCheck,
+    title: 'LOR Tracker',
+    desc: 'Manage recommenders, track submission status per university, and generate a personalised request email in one click.',
+  },
+  {
+    icon: BarChart2,
+    title: 'Fit Score',
+    desc: 'See how your profile stacks up against each program\'s requirements — Strong Fit, Borderline, or Reach — before you apply.',
+  },
+  {
+    icon: Calendar,
+    title: 'Timeline Calculator',
+    desc: 'Enter your enrollment date and get a backwards milestone schedule covering every step of the application process.',
+  },
+];
+
+const steps = [
+  {
+    number: '01',
+    title: 'Build your profile',
+    desc: 'Enter your GPA, test scores, field of study, and goals. Takes 5 minutes.',
+  },
+  {
+    number: '02',
+    title: 'Get AI suggestions',
+    desc: 'Claude analyses your profile and recommends 9 schools across Dream, Target, and Safety tiers.',
+  },
+  {
+    number: '03',
+    title: 'Track everything',
+    desc: 'Manage SOPs, documents, LORs, and deadlines in one place — no spreadsheets.',
+  },
+];
+
+export default function Landing() {
+  return (
+    <div style={{ background: 'var(--bg)', color: 'var(--text-primary)', minHeight: '100vh' }}>
+
+      {/* Nav */}
+      <motion.nav
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="flex items-center justify-between px-6 md:px-12 py-4 sticky top-0 z-50 backdrop-blur-md"
+        style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(var(--bg-rgb, 247,245,242), 0.85)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+            <span className="text-white text-sm font-bold">U</span>
+          </div>
+          <span className="font-semibold text-base tracking-tight" style={{ fontFamily: 'Fraunces, serif' }}>UniApply</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link to="/login"
+            className="text-sm font-medium px-4 py-2 rounded-xl transition-all"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+            Sign in
+          </Link>
+          <Link to="/signup"
+            className="text-sm font-medium px-4 py-2 rounded-xl text-white transition-all active:scale-95"
+            style={{ background: 'var(--accent)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-hover)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--accent)'}>
+            Get started free
+          </Link>
+        </div>
+      </motion.nav>
+
+      {/* Hero */}
+      <div className="px-6 md:px-12 pt-20 pb-24 max-w-5xl mx-auto text-center">
+        <motion.div variants={stagger(0.1)} initial="hidden" animate="visible">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mb-6"
+            style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
+            <Globe size={11} strokeWidth={2.5} />
+            Built for South Asian students applying abroad
+          </span>
+        </motion.div>
+
+        <motion.h1
+          variants={stagger(0.2)} initial="hidden" animate="visible"
+          className="text-4xl md:text-6xl font-bold leading-tight tracking-tight mb-6"
+          style={{ fontFamily: 'Fraunces, serif' }}>
+          Your entire grad school<br />
+          application,{' '}
+          <span style={{ color: 'var(--accent)' }}>in one place.</span>
+        </motion.h1>
+
+        <motion.p
+          variants={stagger(0.3)} initial="hidden" animate="visible"
+          className="text-lg md:text-xl mb-10 max-w-2xl mx-auto"
+          style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+          AI-powered university suggestions, SOP critique, application checklists, and deadline tracking —
+          everything consultancies charge NPR 60,000 for, free.
+        </motion.p>
+
+        <motion.div
+          variants={stagger(0.4)} initial="hidden" animate="visible"
+          className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link to="/signup"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
+            style={{ background: 'var(--accent)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-hover)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--accent)'}>
+            Start for free
+            <ArrowRight size={15} strokeWidth={2.5} />
+          </Link>
+          <Link to="/login"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all"
+            style={{ color: 'var(--text-primary)', background: 'var(--bg-secondary)' }}>
+            Sign in
+          </Link>
+        </motion.div>
+
+        <motion.div
+          variants={stagger(0.5)} initial="hidden" animate="visible"
+          className="flex items-center justify-center gap-6 mt-10 flex-wrap">
+          {['Free forever', 'No credit card', 'AI-powered'].map(label => (
+            <span key={label} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
+              <CheckCircle size={13} strokeWidth={2} style={{ color: 'var(--accent)' }} />
+              {label}
+            </span>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Problem strip */}
+      <Section className="px-6 md:px-12 py-14" style={{ background: 'var(--bg-secondary)' }}>
+        <motion.div variants={fadeUp} className="max-w-3xl mx-auto text-center">
+          <p className="text-2xl md:text-3xl font-bold tracking-tight leading-snug" style={{ fontFamily: 'Fraunces, serif' }}>
+            Consultancies in Nepal charge{' '}
+            <span style={{ color: 'var(--accent)' }}>NPR 50,000–80,000</span>{' '}
+            for advice that's largely template-based.
+          </p>
+          <p className="mt-4 text-base" style={{ color: 'var(--text-secondary)' }}>
+            UniApply gives every student access to the same quality of guidance — powered by AI, not a middleman.
+          </p>
+        </motion.div>
+      </Section>
+
+      {/* Features */}
+      <div className="px-6 md:px-12 py-24 max-w-5xl mx-auto">
+        <Section>
+          <motion.div variants={fadeUp} className="text-center mb-14">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ fontFamily: 'Fraunces, serif' }}>
+              Everything you need to apply
+            </h2>
+            <p className="text-base" style={{ color: 'var(--text-secondary)' }}>
+              From first school list to submitted application — in one dashboard.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <Section key={f.title}>
+                  <motion.div
+                    variants={stagger(i * 0.07)}
+                    className="card p-5 h-full"
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                      style={{ background: 'var(--accent-subtle)' }}>
+                      <Icon size={17} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
+                    </div>
+                    <h3 className="text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>{f.title}</h3>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{f.desc}</p>
+                  </motion.div>
+                </Section>
+              );
+            })}
+          </div>
+        </Section>
+      </div>
+
+      {/* How it works */}
+      <div style={{ background: 'var(--bg-secondary)' }}>
+        <div className="px-6 md:px-12 py-24 max-w-4xl mx-auto">
+          <Section>
+            <motion.div variants={fadeUp} className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ fontFamily: 'Fraunces, serif' }}>
+                How it works
+              </h2>
+              <p className="text-base" style={{ color: 'var(--text-secondary)' }}>
+                Get from zero to a complete application list in under 10 minutes.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {steps.map((step, i) => (
+                <Section key={step.number}>
+                  <motion.div variants={stagger(i * 0.1)} className="text-center">
+                    <div className="text-4xl font-bold mb-3 tabular-nums" style={{ fontFamily: 'Fraunces, serif', color: 'var(--accent)', opacity: 0.3 }}>
+                      {step.number}
+                    </div>
+                    <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{step.title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{step.desc}</p>
+                  </motion.div>
+                </Section>
+              ))}
+            </div>
+          </Section>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <Section className="px-6 md:px-12 py-24">
+        <motion.div variants={fadeUp} className="max-w-2xl mx-auto text-center">
+          <div className="card p-10 md:p-14">
+            <BookOpen size={28} strokeWidth={1.5} className="mx-auto mb-5" style={{ color: 'var(--accent)' }} />
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: 'Fraunces, serif' }}>
+              Ready to apply smarter?
+            </h2>
+            <p className="text-base mb-8" style={{ color: 'var(--text-secondary)' }}>
+              Free forever. No consultancy fees. Just you, your goals, and the tools to get there.
+            </p>
+            <Link to="/signup"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
+              style={{ background: 'var(--accent)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--accent)'}>
+              Create your free account
+              <ArrowRight size={15} strokeWidth={2.5} />
+            </Link>
+          </div>
+        </motion.div>
+      </Section>
+
+      {/* Footer */}
+      <footer className="px-6 md:px-12 py-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+              <span className="text-white text-xs font-bold">U</span>
+            </div>
+            <span className="text-sm font-medium" style={{ fontFamily: 'Fraunces, serif' }}>UniApply</span>
+          </div>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Built for students who deserve better than overpriced consultancies.
+          </p>
+          <div className="flex items-center gap-4">
+            <Link to="/login" className="text-xs transition-colors" style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}>
+              Sign in
+            </Link>
+            <Link to="/signup" className="text-xs transition-colors" style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}>
+              Sign up
+            </Link>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  );
+}
