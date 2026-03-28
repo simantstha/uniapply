@@ -271,13 +271,20 @@ export default function Landing() {
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Connector line — desktop only */}
+              <div className="hidden md:block absolute top-5 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px"
+                style={{ background: 'var(--border)' }} aria-hidden="true" />
+
               {steps.map((step, i) => (
                 <Section key={step.number}>
-                  <motion.div variants={ST(i * 0.1)} className="text-center">
-                    <div className="text-4xl font-bold mb-3 tabular-nums" aria-hidden="true"
-                      style={{ fontFamily: 'Fraunces, serif', color: 'var(--accent)' }}>
-                      {step.number}
+                  <motion.div variants={ST(i * 0.1)} className="text-center relative">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full mb-3 mx-auto"
+                      style={{ background: 'var(--bg-secondary)', border: '2px solid var(--accent)' }}>
+                      <span className="text-sm font-bold tabular-nums" aria-hidden="true"
+                        style={{ fontFamily: 'Fraunces, serif', color: 'var(--accent)' }}>
+                        {step.number}
+                      </span>
                     </div>
                     <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{step.title}</h3>
                     <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{step.desc}</p>
