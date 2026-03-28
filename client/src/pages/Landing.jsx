@@ -99,6 +99,13 @@ export default function Landing() {
   return (
     <div style={{ background: 'var(--bg)', color: 'var(--text-primary)', minHeight: '100vh' }}>
 
+      {/* Skip to content — keyboard accessibility */}
+      <a href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-xl focus:text-sm focus:font-semibold focus:text-white"
+        style={{ background: 'var(--accent)' }}>
+        Skip to content
+      </a>
+
       {/* Nav */}
       <motion.nav
         initial={{ opacity: 0, y: -16 }}
@@ -110,7 +117,7 @@ export default function Landing() {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={toggle}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+            className="w-11 h-11 rounded-xl flex items-center justify-center transition-all"
             style={{ color: 'var(--text-secondary)', background: 'var(--bg-secondary)' }}
             onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
@@ -118,11 +125,12 @@ export default function Landing() {
             {dark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
           </button>
           <Link to="/login"
-            className="hidden sm:block text-sm font-medium px-4 py-2 rounded-xl transition-all"
+            className="text-sm font-medium px-4 py-2 rounded-xl transition-all"
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
-            Sign in
+            <span className="sm:hidden">Log in</span>
+            <span className="hidden sm:inline">Sign in</span>
           </Link>
           <Link to="/signup"
             className="text-sm font-medium px-4 py-2 rounded-xl text-white transition-all active:scale-95"
@@ -136,7 +144,7 @@ export default function Landing() {
       </motion.nav>
 
       {/* Hero */}
-      <div className="px-6 md:px-12 pt-20 pb-24 max-w-5xl mx-auto text-center">
+      <div id="main-content" className="px-6 md:px-12 pt-20 pb-24 max-w-5xl mx-auto text-center">
         <motion.div variants={ST(0.1)} initial="hidden" animate="visible">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mb-6"
             style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
@@ -298,18 +306,18 @@ export default function Landing() {
       <footer className="px-6 md:px-12 py-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <LogoWordmark size="sm" />
-          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Built for students who deserve better than overpriced consultancies.
           </p>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-xs transition-colors" style={{ color: 'var(--text-tertiary)' }}
+            <Link to="/login" className="text-xs transition-colors" style={{ color: 'var(--text-secondary)' }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}>
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
               Sign in
             </Link>
-            <Link to="/signup" className="text-xs transition-colors" style={{ color: 'var(--text-tertiary)' }}
+            <Link to="/signup" className="text-xs transition-colors" style={{ color: 'var(--text-secondary)' }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}>
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
               Sign up
             </Link>
           </div>
