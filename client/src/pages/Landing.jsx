@@ -73,6 +73,12 @@ const features = [
   },
 ];
 
+const testimonial = {
+  quote: "I had no idea which schools to even apply to. UniApply gave me a shortlist in 10 minutes and told me exactly what my SOP was missing.",
+  name: "Priya S.",
+  detail: "Admitted to 3 Master's programs, cycle 2025",
+};
+
 const steps = [
   {
     number: '01',
@@ -300,12 +306,21 @@ export default function Landing() {
       <Section className="px-6 md:px-12 py-24">
         <motion.div variants={FU} className="max-w-2xl mx-auto text-center">
           <div className="card p-10 md:p-14">
-            <BookOpen size={28} strokeWidth={1.5} className="mx-auto mb-5" style={{ color: 'var(--accent)' }} />
+            {/* Testimonial */}
+            <div className="mb-8 p-5 rounded-2xl" style={{ background: 'var(--bg-secondary)' }}>
+              <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--text-primary)', fontStyle: 'italic' }}>
+                "{testimonial.quote}"
+              </p>
+              <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{testimonial.name}</p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{testimonial.detail}</p>
+            </div>
+
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: 'Fraunces, serif' }}>
-              Ready to apply smarter?
+              Students who plan get in.<br />
+              <span style={{ color: 'var(--accent)' }}>Start planning.</span>
             </h2>
             <p className="text-base mb-8" style={{ color: 'var(--text-secondary)' }}>
-              Free forever. No consultancy fees. Just you, your goals, and the tools to get there.
+              Free forever. No consultancy fees. No credit card.
             </p>
             <Link to="/signup"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
