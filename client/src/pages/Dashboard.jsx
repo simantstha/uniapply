@@ -103,6 +103,7 @@ export default function Dashboard() {
   const [resendingVerification, setResendingVerification] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [postAdmissionUniversity, setPostAdmissionUniversity] = useState(null);
+  const [waitlistTipId, setWaitlistTipId] = useState(null);
   const [celebratedIds, setCelebratedIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('uniapply_celebrated') || '[]'); } catch { return []; }
   });
@@ -664,28 +665,60 @@ export default function Dashboard() {
                 <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
                   Decisions
                 </h3>
+                {decisions.filter(u => u.applicationStatus === 'admitted').length >= 2 && (
+                  <div className="mb-3 px-3 py-2.5 rounded-xl flex items-center gap-2"
+                    style={{ background: 'rgba(52,199,89,0.08)', border: '1px solid rgba(52,199,89,0.2)' }}>
+                    <Sparkles size={13} style={{ color: '#34C759', flexShrink: 0 }} strokeWidth={1.6} />
+                    <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
+                      You're admitted to {decisions.filter(u => u.applicationStatus === 'admitted').length} schools.{' '}
+                      <Link to="/compare" style={{ color: '#34C759', fontWeight: 600 }}>
+                        Compare them before accepting →
+                      </Link>
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   {decisions.map(u => (
-                    <div key={u.id} className="flex items-center justify-between gap-3 py-2"
-                      style={{ borderBottom: '1px solid var(--border)' }}>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
-                        <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
+                    <div key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <div className="flex items-center justify-between gap-3 py-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                          <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <ApplicationStatusPicker
+                            value={u.applicationStatus || 'not_applied'}
+                            onChange={(s) => handleAppStatusChange(u.id, s)}
+                          />
+                          {u.applicationStatus === 'admitted' && (
+                            <button
+                              onClick={() => setPostAdmissionUniversity(u)}
+                              className="text-xs px-2 py-1 rounded-lg"
+                              style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759', border: '1px solid rgba(52,199,89,0.2)', cursor: 'pointer' }}>
+                              View next steps
+                            </button>
+                          )}
+                          {u.applicationStatus === 'rejected' && (
+                            <span className="text-xs" style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                              Consider emailing admissions for feedback
+                            </span>
+                          )}
+                          {u.applicationStatus === 'waitlisted' && (
+                            <button
+                              onClick={() => setWaitlistTipId(u.id === waitlistTipId ? null : u.id)}
+                              className="text-xs"
+                              style={{ background: 'none', border: 'none', color: '#D4A843', cursor: 'pointer', fontWeight: 500 }}>
+                              How to respond →
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <ApplicationStatusPicker
-                          value={u.applicationStatus || 'not_applied'}
-                          onChange={(s) => handleAppStatusChange(u.id, s)}
-                        />
-                        {u.applicationStatus === 'admitted' && (
-                          <button
-                            onClick={() => setPostAdmissionUniversity(u)}
-                            className="text-xs px-2 py-1 rounded-lg"
-                            style={{ background: 'rgba(52,199,89,0.1)', color: '#34C759', border: '1px solid rgba(52,199,89,0.2)', cursor: 'pointer' }}>
-                            View next steps
-                          </button>
-                        )}
-                      </div>
+                      {u.applicationStatus === 'waitlisted' && waitlistTipId === u.id && (
+                        <div className="w-full mt-2 mb-2 px-3 py-2.5 rounded-xl text-xs"
+                          style={{ background: 'rgba(212,168,67,0.08)', color: 'var(--text-secondary)', border: '1px solid rgba(212,168,67,0.2)' }}>
+                          Write a <strong>letter of continued interest</strong>: reaffirm your enthusiasm, share any new achievements since applying, and confirm you'll attend if accepted. Keep it under 300 words. Email the admissions office directly.
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
