@@ -3,8 +3,9 @@ import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
   Sparkles, FileText, ClipboardList, UserCheck,
-  BarChart2, Calendar, ArrowRight, CheckCircle, Globe, BookOpen
+  BarChart2, Calendar, ArrowRight, CheckCircle, Globe, BookOpen, Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -82,6 +83,7 @@ const steps = [
 ];
 
 export default function Landing() {
+  const { dark, toggle } = useTheme();
   return (
     <div style={{ background: 'var(--bg)', color: 'var(--text-primary)', minHeight: '100vh' }}>
 
@@ -99,6 +101,15 @@ export default function Landing() {
           <span className="font-semibold text-base tracking-tight" style={{ fontFamily: 'Fraunces, serif' }}>UniApply</span>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={toggle}
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+            style={{ color: 'var(--text-secondary)', background: 'var(--bg-secondary)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+            aria-label="Toggle theme">
+            {dark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
+          </button>
           <Link to="/login"
             className="text-sm font-medium px-4 py-2 rounded-xl transition-all"
             style={{ color: 'var(--text-secondary)' }}
