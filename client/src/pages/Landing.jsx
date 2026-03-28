@@ -233,14 +233,22 @@ export default function Landing() {
                 <Section key={f.title}>
                   <motion.div
                     variants={ST(i * 0.07)}
-                    className="card p-5 h-full"
-                    whileHover={{ y: -3, transition: { duration: 0.2 } }}>
+                    className="card p-5 h-full transition-all"
+                    style={{ cursor: 'default' }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = 'var(--accent)';
+                      e.currentTarget.style.boxShadow = '0 0 0 1px var(--accent)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = '';
+                      e.currentTarget.style.boxShadow = '';
+                    }}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
                       style={{ background: 'var(--accent-subtle)' }}>
                       <Icon size={17} strokeWidth={1.8} style={{ color: 'var(--accent)' }} />
                     </div>
                     <h3 className="text-sm font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>{f.title}</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{f.desc}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{f.desc}</p>
                   </motion.div>
                 </Section>
               );
@@ -266,7 +274,8 @@ export default function Landing() {
               {steps.map((step, i) => (
                 <Section key={step.number}>
                   <motion.div variants={ST(i * 0.1)} className="text-center">
-                    <div className="text-4xl font-bold mb-3 tabular-nums" style={{ fontFamily: 'Fraunces, serif', color: 'var(--accent)', opacity: 0.3 }}>
+                    <div className="text-4xl font-bold mb-3 tabular-nums" aria-hidden="true"
+                      style={{ fontFamily: 'Fraunces, serif', color: 'var(--accent)' }}>
                       {step.number}
                     </div>
                     <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{step.title}</h3>
