@@ -66,7 +66,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/universities" element={<Universities />} />
               <Route path="/documents" element={<Documents />} />
-              <Route path="/sop/:universityId" element={<UniversityDetail />} />
+              <Route path="/universities/:universityId" element={<UniversityDetail />} />
               <Route path="/sop/:universityId/:sopId" element={<SOPWorkshop />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/timeline" element={<Timeline />} />

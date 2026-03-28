@@ -154,7 +154,7 @@ export default function SOPWorkshop() {
           if (historyRes) setCritiqueHistory(historyRes.data);
         }
       })
-      .catch(() => navigate(`/sop/${universityId}`));
+      .catch(() => navigate(`/universities/${universityId}`));
   }, [sopId, editor]);
 
   useEffect(() => () => clearTimeout(saveTimer.current), []);
@@ -242,7 +242,7 @@ export default function SOPWorkshop() {
       <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b flex-shrink-0"
         style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <button onClick={() => navigate(`/sop/${universityId}`)}
+          <button onClick={() => navigate(`/universities/${universityId}`)}
             className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
             style={{ color: 'var(--text-tertiary)' }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
