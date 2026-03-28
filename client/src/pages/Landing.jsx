@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { LogoWordmark } from '../components/Logo';
 import {
   Sparkles, FileText, ClipboardList, UserCheck,
   BarChart2, Calendar, ArrowRight, CheckCircle, Globe, BookOpen, Sun, Moon
@@ -94,12 +95,7 @@ export default function Landing() {
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="flex items-center justify-between px-6 md:px-12 py-4 sticky top-0 z-50 backdrop-blur-md"
         style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(var(--bg-rgb, 247,245,242), 0.85)' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-            <span className="text-white text-sm font-bold">U</span>
-          </div>
-          <span className="font-semibold text-base tracking-tight" style={{ fontFamily: 'Fraunces, serif' }}>UniApply</span>
-        </div>
+        <LogoWordmark size="md" />
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={toggle}
@@ -290,12 +286,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="px-6 md:px-12 py-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-              <span className="text-white text-xs font-bold">U</span>
-            </div>
-            <span className="text-sm font-medium" style={{ fontFamily: 'Fraunces, serif' }}>UniApply</span>
-          </div>
+          <LogoWordmark size="sm" />
           <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
             Built for students who deserve better than overpriced consultancies.
           </p>
