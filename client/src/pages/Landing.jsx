@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { useRef } from 'react';
 import { LogoWordmark } from '../components/Logo';
 import {
@@ -9,16 +9,23 @@ import {
 import { useTheme } from '../context/ThemeContext';
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
 };
 
 const stagger = (delay = 0) => ({
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay } },
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1], delay } },
 });
 
-function Section({ children, className = '' }) {
+// Instant variants for prefers-reduced-motion
+const noMotion = {
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0 } },
+};
+const noMotionStagger = () => noMotion;
+
+function Section({ children, className = '', style }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
   return (
@@ -26,7 +33,8 @@ function Section({ children, className = '' }) {
       ref={ref}
       initial="hidden"
       animate={inView ? 'visible' : 'hidden'}
-      className={className}>
+      className={className}
+      style={style}>
       {children}
     </motion.section>
   );
@@ -85,6 +93,9 @@ const steps = [
 
 export default function Landing() {
   const { dark, toggle } = useTheme();
+  const prefersReduced = useReducedMotion();
+  const FU = prefersReduced ? noMotion : fadeUp;
+  const ST = prefersReduced ? noMotionStagger : stagger;
   return (
     <div style={{ background: 'var(--bg)', color: 'var(--text-primary)', minHeight: '100vh' }}>
 
@@ -92,7 +103,7 @@ export default function Landing() {
       <motion.nav
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: prefersReduced ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
         className="flex items-center justify-between px-6 md:px-12 py-4 sticky top-0 z-50 backdrop-blur-md"
         style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(var(--bg-rgb, 247,245,242), 0.85)' }}>
         <LogoWordmark size="md" />
@@ -126,7 +137,7 @@ export default function Landing() {
 
       {/* Hero */}
       <div className="px-6 md:px-12 pt-20 pb-24 max-w-5xl mx-auto text-center">
-        <motion.div variants={stagger(0.1)} initial="hidden" animate="visible">
+        <motion.div variants={ST(0.1)} initial="hidden" animate="visible">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full mb-6"
             style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
             <Globe size={11} strokeWidth={2.5} />
@@ -135,7 +146,7 @@ export default function Landing() {
         </motion.div>
 
         <motion.h1
-          variants={stagger(0.2)} initial="hidden" animate="visible"
+          variants={ST(0.2)} initial="hidden" animate="visible"
           className="text-4xl md:text-6xl font-bold leading-tight tracking-tight mb-6"
           style={{ fontFamily: 'Fraunces, serif' }}>
           Your entire university<br />
@@ -144,7 +155,7 @@ export default function Landing() {
         </motion.h1>
 
         <motion.p
-          variants={stagger(0.3)} initial="hidden" animate="visible"
+          variants={ST(0.3)} initial="hidden" animate="visible"
           className="text-lg md:text-xl mb-10 max-w-2xl mx-auto"
           style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
           AI-powered university suggestions, SOP critique, application checklists, and deadline tracking —
@@ -152,7 +163,7 @@ export default function Landing() {
         </motion.p>
 
         <motion.div
-          variants={stagger(0.4)} initial="hidden" animate="visible"
+          variants={ST(0.4)} initial="hidden" animate="visible"
           className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link to="/signup"
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
@@ -170,7 +181,7 @@ export default function Landing() {
         </motion.div>
 
         <motion.div
-          variants={stagger(0.5)} initial="hidden" animate="visible"
+          variants={ST(0.5)} initial="hidden" animate="visible"
           className="flex items-center justify-center gap-6 mt-10 flex-wrap">
           {['Free forever', 'No credit card', 'AI-powered'].map(label => (
             <span key={label} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
@@ -183,7 +194,7 @@ export default function Landing() {
 
       {/* Problem strip */}
       <Section className="px-6 md:px-12 py-14" style={{ background: 'var(--bg-secondary)' }}>
-        <motion.div variants={fadeUp} className="max-w-3xl mx-auto text-center">
+        <motion.div variants={FU} className="max-w-3xl mx-auto text-center">
           <p className="text-2xl md:text-3xl font-bold tracking-tight leading-snug" style={{ fontFamily: 'Fraunces, serif' }}>
             Consultancies in Nepal charge{' '}
             <span style={{ color: 'var(--accent)' }}>NPR 50,000–80,000</span>{' '}
@@ -198,7 +209,7 @@ export default function Landing() {
       {/* Features */}
       <div className="px-6 md:px-12 py-24 max-w-5xl mx-auto">
         <Section>
-          <motion.div variants={fadeUp} className="text-center mb-14">
+          <motion.div variants={FU} className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ fontFamily: 'Fraunces, serif' }}>
               Everything you need to apply
             </h2>
@@ -213,7 +224,7 @@ export default function Landing() {
               return (
                 <Section key={f.title}>
                   <motion.div
-                    variants={stagger(i * 0.07)}
+                    variants={ST(i * 0.07)}
                     className="card p-5 h-full"
                     whileHover={{ y: -3, transition: { duration: 0.2 } }}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
@@ -234,7 +245,7 @@ export default function Landing() {
       <div style={{ background: 'var(--bg-secondary)' }}>
         <div className="px-6 md:px-12 py-24 max-w-4xl mx-auto">
           <Section>
-            <motion.div variants={fadeUp} className="text-center mb-14">
+            <motion.div variants={FU} className="text-center mb-14">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ fontFamily: 'Fraunces, serif' }}>
                 How it works
               </h2>
@@ -246,7 +257,7 @@ export default function Landing() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {steps.map((step, i) => (
                 <Section key={step.number}>
-                  <motion.div variants={stagger(i * 0.1)} className="text-center">
+                  <motion.div variants={ST(i * 0.1)} className="text-center">
                     <div className="text-4xl font-bold mb-3 tabular-nums" style={{ fontFamily: 'Fraunces, serif', color: 'var(--accent)', opacity: 0.3 }}>
                       {step.number}
                     </div>
@@ -262,7 +273,7 @@ export default function Landing() {
 
       {/* CTA */}
       <Section className="px-6 md:px-12 py-24">
-        <motion.div variants={fadeUp} className="max-w-2xl mx-auto text-center">
+        <motion.div variants={FU} className="max-w-2xl mx-auto text-center">
           <div className="card p-10 md:p-14">
             <BookOpen size={28} strokeWidth={1.5} className="mx-auto mb-5" style={{ color: 'var(--accent)' }} />
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: 'Fraunces, serif' }}>
