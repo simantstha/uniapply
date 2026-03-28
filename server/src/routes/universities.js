@@ -319,7 +319,7 @@ router.put('/:id', async (req, res) => {
       data,
     });
     if (university.count === 0) return res.status(404).json({ error: 'Not found' });
-    const updated = await prisma.university.findUnique({ where: { id: parseInt(req.params.id) } });
+    const updated = await prisma.university.findFirst({ where: { id: parseInt(req.params.id), userId: req.userId } });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -345,7 +345,7 @@ router.patch('/:id', async (req, res) => {
       data,
     });
     if (university.count === 0) return res.status(404).json({ error: 'Not found' });
-    const updated = await prisma.university.findUnique({ where: { id: parseInt(req.params.id) } });
+    const updated = await prisma.university.findFirst({ where: { id: parseInt(req.params.id), userId: req.userId } });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });

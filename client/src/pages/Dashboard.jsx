@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { getUpcomingMilestones } from './Timeline';
 import ErrorCard from '../components/ErrorCard';
-import ApplicationStatusPicker, { APPLICATION_STATUSES } from '../components/ApplicationStatusPicker';
+import ApplicationStatusPicker from '../components/ApplicationStatusPicker';
 import { DashboardSkeleton } from '../components/common/Skeleton';
 import {
   Building2, FileText, Sparkles, ArrowRight, Calendar,
