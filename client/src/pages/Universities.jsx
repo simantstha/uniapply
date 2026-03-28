@@ -6,6 +6,7 @@ import ErrorCard from '../components/ErrorCard';
 import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows, Sparkles, CheckCircle2, Circle } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 import ApplicationStatusPicker from '../components/ApplicationStatusPicker';
+import PreflightDrawer from '../components/PreflightDrawer';
 
 const PHD_BANNER_KEY = 'uniapply_phd_banner_dismissed';
 
@@ -78,6 +79,7 @@ export default function Universities() {
   const [suggestError, setSuggestError] = useState('');
   const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
   const [addingSelected, setAddingSelected] = useState(false);
+  const [preflightUniversity, setPreflightUniversity] = useState(null);
 
   const fetchData = () => {
     setFetchError(false);
@@ -172,6 +174,17 @@ export default function Universities() {
   const handleDelete = async (id) => {
     await apiClient.delete(`/api/universities/${id}`);
     fetchData();
+  };
+
+  const handleMarkApplied = async (universityId) => {
+    try {
+      const res = await apiClient.patch(`/api/universities/${universityId}`, {
+        applicationStatus: 'applied',
+      });
+      setUniversities(prev =>
+        prev.map(u => u.id === universityId ? { ...u, applicationStatus: res.data.applicationStatus } : u)
+      );
+    } catch { /* silent */ }
   };
 
   const handleApplicationStatusChange = async (universityId, newStatus) => {
@@ -426,6 +439,14 @@ export default function Universities() {
                       />
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: dl.bg, color: dl.color }}>{dl.label}</span>
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: stat.bg, color: stat.color }}>{stat.label}</span>
+                      {(u.applicationStatus === 'not_applied' || !u.applicationStatus) && (
+                        <button
+                          onClick={() => setPreflightUniversity(u)}
+                          className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                          Ready to Apply →
+                        </button>
+                      )}
                     </div>
 
                     {u.applicationDeadline && (
@@ -735,6 +756,14 @@ export default function Universities() {
             </div>
           </div>
         </div>
+      )}
+
+      {preflightUniversity && (
+        <PreflightDrawer
+          university={preflightUniversity}
+          onClose={() => setPreflightUniversity(null)}
+          onMarkApplied={handleMarkApplied}
+        />
       )}
     </div>
   );
