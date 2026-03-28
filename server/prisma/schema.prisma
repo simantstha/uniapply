@@ -76,6 +76,9 @@ model University {
   status              String    @default("not_started")
   notes               String?
   fundingType         String    @default("unknown") @map("funding_type") // "funded", "self_funded", "partial", "unknown"
+  applicationStatus    String  @default("not_applied") @map("application_status")
+  applicationPortalUrl String? @map("application_portal_url")
+  applicationPortalType String? @map("application_portal_type")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 

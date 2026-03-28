@@ -321,11 +321,14 @@ router.put('/:id', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    const { status, notes, fundingType } = req.body;
+    const { status, notes, fundingType, applicationStatus, applicationPortalUrl, applicationPortalType } = req.body;
     const data = {};
     if (status !== undefined) data.status = status;
     if (notes !== undefined) data.notes = notes;
     if (fundingType !== undefined) data.fundingType = fundingType;
+    if (applicationStatus !== undefined) data.applicationStatus = applicationStatus;
+    if (applicationPortalUrl !== undefined) data.applicationPortalUrl = applicationPortalUrl;
+    if (applicationPortalType !== undefined) data.applicationPortalType = applicationPortalType;
     const university = await prisma.university.updateMany({
       where: { id: parseInt(req.params.id), userId: req.userId },
       data,
