@@ -157,9 +157,10 @@ export default function Profile() {
               value={form.undergraduateInstitution} onChange={set('undergraduateInstitution')}
               placeholder={isUndergrad ? 'e.g. Kathmandu Model School' : 'e.g. Tribhuvan University'} />
             <Field
-              label={isUndergrad ? 'Intended Major / Interest' : 'Major'}
-              value={form.undergraduateMajor} onChange={set('undergraduateMajor')}
-              placeholder={isUndergrad ? 'e.g. Computer Science' : 'e.g. Computer Science'} />
+              label={isUndergrad ? 'Intended Major' : 'Undergraduate Major'}
+              value={isUndergrad ? form.fieldOfStudy : form.undergraduateMajor}
+              onChange={isUndergrad ? set('fieldOfStudy') : set('undergraduateMajor')}
+              placeholder="e.g. Computer Science" />
             <div className="grid grid-cols-2 gap-3">
               <Field
                 label={isUndergrad ? 'Graduation Year' : 'Graduation Year'}
@@ -225,10 +226,12 @@ export default function Profile() {
         {step === 3 && (
           <div className="space-y-4">
             <SectionTitle>Goals & Interests</SectionTitle>
-            <Field
-              label={isUndergrad ? 'Intended Field of Study' : 'Field of Study'}
-              value={form.fieldOfStudy} onChange={set('fieldOfStudy')}
-              placeholder={isUndergrad ? 'e.g. Engineering, Business' : 'e.g. Machine Learning'} />
+            {!isUndergrad && (
+              <Field
+                label="Field of Study"
+                value={form.fieldOfStudy} onChange={set('fieldOfStudy')}
+                placeholder="e.g. Machine Learning" />
+            )}
             <TextArea
               label="Career Goals"
               value={form.careerGoals} onChange={set('careerGoals')}
