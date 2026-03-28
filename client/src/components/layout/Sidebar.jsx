@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, User, Building2, FolderOpen, LogOut, Sun, Moon, CalendarClock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { LogoWordmark } from '../Logo';
 
 const navItems = [
   { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard' },
@@ -22,15 +23,7 @@ export default function Sidebar() {
     <aside className="w-56 flex flex-col border-r flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-subtle)' }}>
       {/* Logo */}
       <div className="px-5 py-5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--accent)' }}>
-            <span className="text-white text-xs font-bold" style={{ fontFamily: 'Fraunces, serif' }}>U</span>
-          </div>
-          <span className="font-semibold text-sm tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Fraunces, serif' }}>
-            UniApply
-          </span>
-        </div>
+        <LogoWordmark size="sm" />
       </div>
 
       {/* Nav */}
