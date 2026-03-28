@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Check } from 'lucide-react';
+import { Check, LogOut } from 'lucide-react';
 import GlossaryTooltip from '../components/GlossaryTooltip';
+import { useAuth } from '../context/AuthContext';
 
 const steps = [
   { id: 1, label: 'Background' },
@@ -35,6 +37,8 @@ const LEVEL_LABELS = {
 };
 
 export default function Profile() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(defaultForm);
   const [saved, setSaved] = useState(false);
@@ -117,6 +121,27 @@ export default function Profile() {
       <div className="mb-5 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Profile</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Your academic background — used to personalise AI critiques</p>
+      </div>
+
+      {/* Account card — mobile only */}
+      <div className="md:hidden card p-4 shadow-apple-sm mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+            style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
+            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{user?.name}</p>
+            <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{user?.email}</p>
+          </div>
+        </div>
+        <button
+          onClick={() => { logout(); navigate('/login'); }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium flex-shrink-0"
+          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+          <LogOut size={13} strokeWidth={2} />
+          Sign out
+        </button>
       </div>
 
       {/* Study level selector — always visible */}

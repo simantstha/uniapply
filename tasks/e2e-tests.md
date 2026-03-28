@@ -163,9 +163,13 @@ Last run: 2026-03-28
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
 | 11.1 | Sidebar renders all links | ✅ | Dashboard, Profile, Universities, Documents, Timeline all present |
-| 11.2 | Mobile nav renders + opens correctly | ✅ | 390×844 (iPhone 15 Pro) — bottom nav bar replaces sidebar, all 5 icons present (Dashboard, Profile, Universities, Documents, Timeline) |
+| 11.2 | Mobile nav order: Dashboard → Universities → Profile → Documents → Timeline | ✅ | 390×844 — correct order confirmed |
 | 11.3 | Full-height layout only for /sop/:id/:id | ✅ | SOPWorkshop uses full height; other pages use standard layout |
 | 11.4 | Dark/light mode toggle works | ✅ | Dark Mode → Light Mode switch confirmed |
+| 11.5 | Login page — logo shows LogoWordmark (mortarboard + wordmark) | ✅ | SVG mortarboard + "uniapply" wordmark present, no blue "U" box |
+| 11.6 | Signup page — logo shows LogoWordmark (mortarboard + wordmark) | ✅ | Consistent with sidebar |
+| 11.7 | Mobile Profile page — account card visible with name, email, sign-out button | ✅ | 390×844 — "Test User E2E / e2etest@uniapply.test" + Sign out button at top |
+| 11.8 | Mobile sign-out — tapping Sign out logs user out and redirects to /login | ⬜ | Not tested this run (would invalidate session) |
 
 ---
 
@@ -201,6 +205,7 @@ Last run: 2026-03-28
 | 1 | 2026-03-28 | Claude E2E (Playwright) | 42 | 0 | 22 untested, 1 warning | Full happy-path run on fresh test account. No failures. 1 bug: React `validateDOMNesting` warning on Profile/Test Scores tab (button-in-button in tooltip markup). Untested = SMTP flows, Compare page, file upload, mobile nav, PhD-specific paths. |
 | 2 | 2026-03-28 | Claude Mobile (Playwright 390×844) | 7 | 0 | — | Mobile responsive check on iPhone 15 Pro viewport. All 7 pages (Dashboard, Universities, SOPWorkshop, SOP Critique, Documents, Profile, Timeline) render correctly. Bottom nav present on all pages. validateDOMNesting warning still present on Profile. |
 | 3 | 2026-03-28 | Claude E2E (Playwright) | 15 | 0 | 3 untested | User journey gaps feature (Section 12). 15/18 pass. Untested: rejected guidance (12.16), waitlisted tips (12.17), multiple admissions nudge (12.18). All core flows — status picker, cost calculator, pre-flight drawer, post-admission visa checklist — verified. |
+| 4 | 2026-03-28 | Claude E2E (Playwright 390×844) | 6 | 0 | 1 untested | Mobile UX fixes. Logo on login/signup (11.5, 11.6) ✅. Mobile nav order (11.2) ✅. Profile account card with sign-out button (11.7) ✅. Sign-out redirect (11.8) not tested to preserve session. |
 
 ---
 

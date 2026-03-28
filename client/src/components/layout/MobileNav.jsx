@@ -3,8 +3,8 @@ import { LayoutDashboard, User, Building2, FolderOpen, CalendarClock } from 'luc
 
 const navItems = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/profile',      icon: User,            label: 'Profile' },
   { to: '/universities', icon: Building2,        label: 'Universities' },
+  { to: '/profile',      icon: User,            label: 'Profile' },
   { to: '/documents',    icon: FolderOpen,       label: 'Documents' },
   { to: '/timeline',     icon: CalendarClock,    label: 'Timeline' },
 ];

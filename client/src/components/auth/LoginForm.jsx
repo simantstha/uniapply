@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
+import { LogoWordmark } from '../Logo';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -38,8 +39,8 @@ export default function LoginForm() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-apple-blue rounded-2xl flex items-center justify-center shadow-apple mb-4">
-            <span className="text-white text-xl font-bold">U</span>
+          <div className="mb-4">
+            <LogoWordmark size="lg" />
           </div>
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Sign in to UniApply</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Your study abroad journey starts here</p>
