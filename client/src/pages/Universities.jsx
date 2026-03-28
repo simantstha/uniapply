@@ -425,7 +425,7 @@ export default function Universities() {
                   </div>
 
                 <div className="px-5 pb-5">
-                    <Link to={`/sop/${u.id}`} className="btn-primary w-full flex items-center justify-center gap-2 py-2">
+                    <Link to={`/universities/${u.id}`} className="btn-primary w-full flex items-center justify-center gap-2 py-2">
                       <PenLine size={12} strokeWidth={2} /> Open
                     </Link>
                   </div>

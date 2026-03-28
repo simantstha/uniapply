@@ -8,7 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Universities from './pages/Universities';
 import SOPWorkshop from './pages/SOPWorkshop';
-import SOPList from './pages/SOPList';
+import UniversityDetail from './pages/UniversityDetail';
 import Documents from './pages/Documents';
 import Onboarding from './pages/Onboarding';
 import Compare from './pages/Compare';
@@ -66,7 +66,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/universities" element={<Universities />} />
               <Route path="/documents" element={<Documents />} />
-              <Route path="/sop/:universityId" element={<SOPList />} />
+              <Route path="/universities/:universityId" element={<UniversityDetail />} />
               <Route path="/sop/:universityId/:sopId" element={<SOPWorkshop />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/timeline" element={<Timeline />} />

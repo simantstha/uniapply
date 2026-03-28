@@ -279,7 +279,7 @@ export default function Dashboard() {
                 const sopColor = { none: 'var(--text-tertiary)', draft: '#D4A843', reviewed: '#34C759' }[u.sopStatus];
 
                 return (
-                  <Link key={u.id} to={`/sop/${u.id}`}
+                  <Link key={u.id} to={`/universities/${u.id}`}
                     className="px-5 py-3.5 flex items-center gap-3 transition-all hover:opacity-80">
                     {/* Risk dot */}
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: risk.dot }} />
@@ -647,7 +647,7 @@ export default function Dashboard() {
                         <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{u.program}</p>
                       </div>
                     </div>
-                    <Link to={`/sop/${u.id}`}
+                    <Link to={`/universities/${u.id}`}
                       className="flex-shrink-0 ml-2 p-1.5 rounded-lg transition-opacity"
                       style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                       <PenLine size={11} />
