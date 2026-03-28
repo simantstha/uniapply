@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
-import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList, Info, Paperclip, Download } from 'lucide-react';
+import { ChevronLeft, Plus, PenLine, Star, Trash2, Clock, FileText, Sparkles, Crown, BookOpen, ExternalLink, CheckCircle, Circle, ClipboardList, Info, Paperclip, Download, Pencil, Calendar, X } from 'lucide-react';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const categoryConfig = {
@@ -117,6 +117,11 @@ export default function SOPList() {
   const [checklistLoading, setChecklistLoading] = useState(true);
   const [docs, setDocs] = useState({ loading: false, data: null });
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
   const isPremium = user?.plan === 'student' || user?.plan === 'premium';
 
   const fetchChecklist = () => {
@@ -178,6 +183,34 @@ export default function SOPList() {
     setSops(prev => prev.filter(s => s.id !== sopId));
   };
 
+  const openEdit = () => {
+    setEditForm({
+      category: university?.category || 'target',
+      status: university?.status || 'not_started',
+      applicationDeadline: university?.applicationDeadline ? university.applicationDeadline.slice(0, 10) : '',
+      fundingType: university?.fundingType || 'unknown',
+      websiteUrl: university?.websiteUrl || '',
+      notes: university?.notes || '',
+    });
+    setEditError('');
+    setEditOpen(true);
+  };
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const res = await apiClient.put(`/api/universities/${universityId}`, editForm);
+      setUniversity(prev => ({ ...prev, ...res.data }));
+      setEditOpen(false);
+    } catch (err) {
+      setEditError(err.response?.data?.error || 'Failed to save');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const handleTabChange = async (tab) => {
     setActiveTab(tab);
     if (tab === 'requirements' && !req.data && !req.loading) {
@@ -235,9 +268,33 @@ export default function SOPList() {
                     {university.degreeLevel.charAt(0).toUpperCase() + university.degreeLevel.slice(1)}
                   </span>
                 )}
+                {(() => {
+                  const statusLabels = { not_started: 'Not Started', in_progress: 'In Progress', submitted: 'Submitted', accepted: 'Accepted', rejected: 'Rejected', waitlisted: 'Waitlisted' };
+                  const statusColors = { not_started: ['var(--text-tertiary)', 'var(--bg-secondary)'], in_progress: ['#D4A843', 'rgba(212,168,67,0.1)'], submitted: ['#3B82F6', 'rgba(59,130,246,0.1)'], accepted: ['#34C759', 'rgba(52,199,89,0.1)'], rejected: ['#FF3B30', 'rgba(255,59,48,0.1)'], waitlisted: ['#D4A843', 'rgba(212,168,67,0.1)'] };
+                  const s = university?.status;
+                  if (!s || s === 'not_started') return null;
+                  const [color, bg] = statusColors[s] || statusColors.not_started;
+                  return <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: bg, color }}>{statusLabels[s]}</span>;
+                })()}
               </div>
               <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>{university?.name}</h1>
               <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{university?.program}</p>
+              {university?.applicationDeadline && (() => {
+                const deadline = new Date(university.applicationDeadline);
+                const daysLeft = Math.ceil((deadline - Date.now()) / (1000 * 60 * 60 * 24));
+                const past = daysLeft < 0;
+                const urgent = !past && daysLeft <= 14;
+                const color = past ? '#FF3B30' : urgent ? '#D4A843' : 'var(--text-tertiary)';
+                return (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <Calendar size={11} strokeWidth={1.8} style={{ color, flexShrink: 0 }} />
+                    <span className="text-xs" style={{ color }}>
+                      {past ? `Deadline passed · ${deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                        : `${daysLeft}d left · ${deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                    </span>
+                  </div>
+                );
+              })()}
               {percentReady !== null && (
                 <button onClick={() => handleTabChange('checklist')}
                   className="flex items-center gap-2 mt-2.5 w-full group"
@@ -256,6 +313,14 @@ export default function SOPList() {
                 </button>
               )}
             </div>
+            <button onClick={openEdit}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+              style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+              <Pencil size={12} strokeWidth={2} />
+              Edit
+            </button>
           </div>
           {!isPremium && sops.length >= 1 && activeTab === 'sops' && (
             <p className="text-xs mt-3 px-3 py-2 rounded-xl" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
@@ -502,6 +567,78 @@ export default function SOPList() {
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Edit modal */}
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+          onClick={e => e.target === e.currentTarget && setEditOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-apple-lg"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center justify-between px-5 py-4"
+              style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Edit University</p>
+              <button onClick={() => setEditOpen(false)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                <X size={14} strokeWidth={2} />
+              </button>
+            </div>
+            <form onSubmit={saveEdit} className="p-5 flex flex-col gap-3">
+              {editError && (
+                <p className="text-xs px-3 py-2 rounded-xl" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>{editError}</p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Category</label>
+                  <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} className="input">
+                    <option value="dream">Dream</option>
+                    <option value="target">Target</option>
+                    <option value="safety">Safety</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Status</label>
+                  <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} className="input">
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="waitlisted">Waitlisted</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Deadline</label>
+                  <input type="date" value={editForm.applicationDeadline} onChange={e => setEditForm(f => ({ ...f, applicationDeadline: e.target.value }))} className="input" />
+                </div>
+                <div>
+                  <label className="label">Funding Type</label>
+                  <select value={editForm.fundingType} onChange={e => setEditForm(f => ({ ...f, fundingType: e.target.value }))} className="input">
+                    <option value="funded">Typically Funded</option>
+                    <option value="self_funded">Self-Funded</option>
+                    <option value="partial">Partial Funding</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="label">Website</label>
+                <input type="url" value={editForm.websiteUrl} onChange={e => setEditForm(f => ({ ...f, websiteUrl: e.target.value }))} className="input" placeholder="https://..." />
+              </div>
+              <div>
+                <label className="label">Notes</label>
+                <textarea value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="input resize-none" placeholder="Any notes..." />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setEditOpen(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" disabled={editSaving} className="btn-primary flex-1">{editSaving ? 'Saving...' : 'Save Changes'}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
