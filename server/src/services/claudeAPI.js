@@ -120,17 +120,20 @@ Return only the email, no commentary.`;
   const humanized = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 600,
-    messages: [{ role: 'user', content: `Rewrite this email to sound less AI-generated while keeping the same meaning and length.
+    messages: [{ role: 'user', content: `You are rewriting an email to make it pass AI detection. The goal is to make it sound like a real student typed it quickly, not like it was generated.
 
-Rules:
-- Break up any overly smooth or balanced sentence pairs
-- Add one small natural imperfection (a minor repetition, a slightly abrupt transition, or an understated phrase)
-- Replace any remaining formal connectors ("Furthermore", "Additionally", "In conclusion") with simpler ones or none
-- Keep contractions where natural
-- Do not change the subject line, the names, the universities, or the deadline
-- Return only the rewritten email, no commentary
+Specific things to fix:
+- Remove ALL em-dashes (—) and replace with a period or comma or just cut the clause
+- Break any sentence that has a "The way X — that's Y" or "X, which Y" structure — these are AI patterns
+- Replace polished abstract phrases ("shaped how I think", "work ethic", "genuine appreciation") with blunter, more direct wording
+- Make 1-2 sentences noticeably shorter or more abrupt than the others
+- Add one small informal word or filler that a student would actually use (like "honestly", "really", "also" in an awkward spot)
+- Do NOT make it sound unprofessional — just less perfect
 
-Email to rewrite:
+Do not change: subject line, names, universities, deadline, overall meaning.
+Return only the rewritten email, no explanation.
+
+Email:
 ${draftText}` }],
   });
 
