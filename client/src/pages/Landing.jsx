@@ -100,7 +100,7 @@ export default function Landing() {
           </div>
           <span className="font-semibold text-base tracking-tight" style={{ fontFamily: 'Fraunces, serif' }}>UniApply</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={toggle}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
@@ -111,7 +111,7 @@ export default function Landing() {
             {dark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
           </button>
           <Link to="/login"
-            className="text-sm font-medium px-4 py-2 rounded-xl transition-all"
+            className="hidden sm:block text-sm font-medium px-4 py-2 rounded-xl transition-all"
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
@@ -122,7 +122,8 @@ export default function Landing() {
             style={{ background: 'var(--accent)' }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-hover)'}
             onMouseLeave={e => e.currentTarget.style.background = 'var(--accent)'}>
-            Get started free
+            <span className="sm:hidden">Sign up</span>
+            <span className="hidden sm:inline">Get started free</span>
           </Link>
         </div>
       </motion.nav>
