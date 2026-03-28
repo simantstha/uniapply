@@ -17,6 +17,7 @@ import Timeline from './pages/Timeline';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
+import Landing from './pages/Landing';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -25,9 +26,21 @@ function PrivateRoute({ children }) {
       <div className="w-6 h-6 border-2 border-apple-blue border-t-transparent rounded-full animate-spin" />
     </div>
   );
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/" replace />;
   if (!user.onboardingCompleted) return <Navigate to="/onboarding" replace />;
   return children;
+}
+
+function PublicHome() {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <div className="w-6 h-6 border-2 border-apple-blue border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+  if (user && user.onboardingCompleted) return <Navigate to="/dashboard" replace />;
+  if (user && !user.onboardingCompleted) return <Navigate to="/onboarding" replace />;
+  return <Landing />;
 }
 
 function App() {
@@ -36,6 +49,7 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
+            <Route path="/" element={<PublicHome />} />
             <Route path="/login" element={<LoginForm />} />
             <Route path="/signup" element={<SignupForm />} />
             <Route path="/onboarding" element={<Onboarding />} />
@@ -43,20 +57,19 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/" element={
+            <Route element={
               <PrivateRoute>
                 <Layout />
               </PrivateRoute>
             }>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="universities" element={<Universities />} />
-              <Route path="documents" element={<Documents />} />
-              <Route path="sop/:universityId" element={<SOPList />} />
-              <Route path="sop/:universityId/:sopId" element={<SOPWorkshop />} />
-              <Route path="compare" element={<Compare />} />
-              <Route path="timeline" element={<Timeline />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/universities" element={<Universities />} />
+              <Route path="/documents" element={<Documents />} />
+              <Route path="/sop/:universityId" element={<SOPList />} />
+              <Route path="/sop/:universityId/:sopId" element={<SOPWorkshop />} />
+              <Route path="/compare" element={<Compare />} />
+              <Route path="/timeline" element={<Timeline />} />
             </Route>
           </Routes>
         </Router>

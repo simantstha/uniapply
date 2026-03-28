@@ -7,6 +7,7 @@
 @layer base {
   :root {
     --bg: #F7F5F2;
+    --bg-rgb: 247, 245, 242;
     --bg-elevated: #FFFFFF;
     --bg-secondary: #EFECE8;
     --text-primary: #1A1410;
@@ -25,6 +26,7 @@
 
   .dark {
     --bg: #131008;
+    --bg-rgb: 19, 16, 8;
     --bg-elevated: #1E1A12;
     --bg-secondary: #28231A;
     --text-primary: #F2EDE6;

@@ -94,39 +94,50 @@ Return ONLY a JSON array with exactly 9 objects, no explanation:
 }
 
 export async function generateLorRequestEmail({ studentName, recommenderName, recommenderEmail, relationship, universities, deadline, fieldOfStudy, careerGoals, programLevel }) {
-  const prompt = `You are helping a student from Nepal write a professional email requesting a letter of recommendation.
+  const prompt = `Write a short email from ${studentName}, a student from Nepal, to their ${relationship} ${recommenderName}, asking for a letter of recommendation.
 
-Student details:
-- Name: ${studentName}
-- Field of study: ${fieldOfStudy || 'graduate studies'}
+Context:
+- Applying to: ${universities.join(', ') || 'universities abroad'} for ${programLevel || 'graduate'} programs in ${fieldOfStudy || 'their field'}
+- Deadline: ${deadline || 'early December'}
 - Career goals: ${careerGoals || 'pursuing advanced education abroad'}
-- Applying for: ${programLevel || 'graduate'} programs
 
-Recommender:
-- Name: ${recommenderName}
-- Relationship: ${relationship} (e.g., professor, employer, mentor)
+Write this as ${studentName} would actually write it — not a template. Use natural, slightly informal language that feels personal. Reference the specific relationship (${relationship}) in a genuine way, not formulaically. Vary sentence length. Avoid corporate phrases like "I hope this email finds you well", "I am reaching out to", "I would be honored", "I wanted to touch base".
 
-Programs applying to: ${universities.join(', ') || 'several universities abroad'}
-Letter deadline: ${deadline || 'early December'}
+The email should feel like it was written by a real person who knows ${recommenderName}, not generated. Include a specific detail about why they're asking this particular person based on the ${relationship} context.
 
-Write a professional, respectful email from the student to ${recommenderName} requesting a letter of recommendation. The email should:
-- Open with appropriate formal greeting
-- Briefly explain what programs they are applying to and the deadline
-- Explain why they are asking this specific person (reference the relationship)
-- Mention they will provide all necessary materials (CV, transcript, SOP draft)
-- Express genuine gratitude and offer to answer any questions
-- Close professionally
+Keep it short — 120-160 words. Start with "Subject:" then a blank line then the body.
+Return only the email, no commentary.`;
 
-Tone: Formal but warm. Length: 150-200 words.
-Return ONLY the email text (subject line first, then body), no explanation.`;
-
-  const message = await anthropic.messages.create({
+  const draft = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 600,
     messages: [{ role: 'user', content: prompt }],
   });
 
-  return message.content[0].text;
+  const draftText = draft.content[0].text;
+
+  // Second pass — humanize to reduce AI detection patterns
+  const humanized = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 600,
+    messages: [{ role: 'user', content: `You are rewriting an email to make it pass AI detection. The goal is to make it sound like a real student typed it quickly, not like it was generated.
+
+Specific things to fix:
+- Remove ALL em-dashes (—) and replace with a period or comma or just cut the clause
+- Break any sentence that has a "The way X — that's Y" or "X, which Y" structure — these are AI patterns
+- Replace polished abstract phrases ("shaped how I think", "work ethic", "genuine appreciation") with blunter, more direct wording
+- Make 1-2 sentences noticeably shorter or more abrupt than the others
+- Add one small informal word or filler that a student would actually use (like "honestly", "really", "also" in an awkward spot)
+- Do NOT make it sound unprofessional — just less perfect
+
+Do not change: subject line, names, universities, deadline, overall meaning.
+Return only the rewritten email, no explanation.
+
+Email:
+${draftText}` }],
+  });
+
+  return humanized.content[0].text;
 }
 
 export async function generateCritique(sop, profile, university) {
