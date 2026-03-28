@@ -321,7 +321,7 @@ export default function Onboarding() {
                 <label className="label">Field of Study</label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {FIELDS.map(f => (
-                    <button key={f} type="button" onClick={() => setFieldOfStudy(f)}
+                    <button key={f} type="button" onClick={() => setFieldOfStudy(prev => prev === f ? '' : f)}
                       className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
                       style={fieldOfStudy === f
                         ? { background: 'var(--accent)', color: 'white' }
@@ -330,8 +330,10 @@ export default function Onboarding() {
                     </button>
                   ))}
                 </div>
-                <input value={fieldOfStudy} onChange={e => setFieldOfStudy(e.target.value)}
-                  placeholder="Or type your field..." className="input text-sm" />
+                {!FIELDS.includes(fieldOfStudy) && (
+                  <input value={fieldOfStudy} onChange={e => setFieldOfStudy(e.target.value)}
+                    placeholder="Or type your field..." className="input text-sm" />
+                )}
               </div>
 
               <div>
