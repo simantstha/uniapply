@@ -12,6 +12,7 @@ import {
   PenLine, FolderOpen, Check, Circle, CalendarClock, X, Mail,
   AlertTriangle, Clock3, BookOpen,
 } from 'lucide-react';
+import CostCalculatorBanner from '../components/CostCalculatorBanner';
 
 const statusConfig = {
   not_started: { label: 'Not Started', color: 'var(--text-tertiary)', bg: 'var(--bg-secondary)' },
@@ -96,6 +97,7 @@ export default function Dashboard() {
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [upcomingMilestones] = useState(() => getUpcomingMilestones(3));
   const [universities, setUniversities] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -131,10 +133,12 @@ export default function Dashboard() {
       apiClient.get('/api/dashboard/stats'),
       apiClient.get('/api/dashboard/overview'),
       apiClient.get('/api/universities'),
-    ]).then(([statsRes, overviewRes, uniRes]) => {
+      apiClient.get('/api/profile'),
+    ]).then(([statsRes, overviewRes, uniRes, profileRes]) => {
       setData(statsRes.data);
       setOverview(overviewRes.data);
       setUniversities(uniRes.data);
+      setProfile(profileRes.data);
     }).catch(() => setError(true));
   };
 
@@ -589,6 +593,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ── Cost Calculator ── */}
+      <CostCalculatorBanner universities={universities} profile={profile} />
 
       {/* ── Application Status Panels ── */}
       {universities.length > 0 && (() => {
