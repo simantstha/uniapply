@@ -99,7 +99,7 @@ function CritiquePanel({ critique }) {
   );
 }
 
-export default function SOPList() {
+export default function UniversityDetail() {
   const { universityId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
