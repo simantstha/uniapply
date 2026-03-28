@@ -157,17 +157,16 @@ export default function Landing() {
           variants={ST(0.2)} initial="hidden" animate="visible"
           className="text-4xl md:text-6xl font-bold leading-tight tracking-tight mb-6"
           style={{ fontFamily: 'Fraunces, serif' }}>
-          Your entire university<br />
-          application,{' '}
-          <span style={{ color: 'var(--accent)' }}>in one place.</span>
+          Most students apply blind.<br />
+          <span style={{ color: 'var(--accent)' }}>You won't.</span>
         </motion.h1>
 
         <motion.p
           variants={ST(0.3)} initial="hidden" animate="visible"
           className="text-lg md:text-xl mb-10 max-w-2xl mx-auto"
           style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-          AI-powered university suggestions, SOP critique, application checklists, and deadline tracking —
-          everything consultancies charge NPR 60,000 for, free.
+          AI university suggestions, SOP critique, LOR tracking, and deadline management —
+          everything consultancies charge <strong style={{ color: 'var(--text-primary)' }}>NPR 60,000</strong> for, completely free.
         </motion.p>
 
         <motion.div
@@ -204,12 +203,14 @@ export default function Landing() {
       <Section className="px-6 md:px-12 py-14" style={{ background: 'var(--bg-secondary)' }}>
         <motion.div variants={FU} className="max-w-3xl mx-auto text-center">
           <p className="text-2xl md:text-3xl font-bold tracking-tight leading-snug" style={{ fontFamily: 'Fraunces, serif' }}>
-            Consultancies in Nepal charge{' '}
-            <span style={{ color: 'var(--accent)' }}>NPR 50,000–80,000</span>{' '}
-            for advice that's largely template-based.
+            <span style={{ textDecoration: 'line-through', color: 'var(--text-tertiary)' }}>NPR 60,000</span>
+            {' '}
+            <span style={{ color: 'var(--accent)' }}>→ NPR 0.</span>
+            {' '}That's what we cost.
           </p>
-          <p className="mt-4 text-base" style={{ color: 'var(--text-secondary)' }}>
-            UniApply gives every student access to the same quality of guidance — powered by AI, not a middleman.
+          <p className="mt-4 text-base max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+            Consultancies in Nepal charge NPR 50,000–80,000 for advice that's largely template-based.
+            UniApply gives every student the same guidance — powered by AI, not a middleman.
           </p>
         </motion.div>
       </Section>
