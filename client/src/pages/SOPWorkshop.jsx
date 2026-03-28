@@ -383,7 +383,7 @@ export default function SOPWorkshop() {
                 ) : (
                   <div className="relative">
                     <EditorContent editor={editor} />
-                    {wordCount < 50 && (
+                    {wordCount === 0 && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="pointer-events-auto flex flex-col items-center gap-3 px-6 py-5 rounded-2xl shadow-apple text-center"
                           style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', maxWidth: 320 }}>
