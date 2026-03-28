@@ -141,7 +141,7 @@ export default function Landing() {
           variants={stagger(0.2)} initial="hidden" animate="visible"
           className="text-4xl md:text-6xl font-bold leading-tight tracking-tight mb-6"
           style={{ fontFamily: 'Fraunces, serif' }}>
-          Your entire grad school<br />
+          Your entire university<br />
           application,{' '}
           <span style={{ color: 'var(--accent)' }}>in one place.</span>
         </motion.h1>
