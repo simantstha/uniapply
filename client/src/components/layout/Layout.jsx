@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
+import FeedbackButton from '../FeedbackButton';
 
 export default function Layout() {
   const location = useLocation();
@@ -20,6 +21,7 @@ export default function Layout() {
 
       {/* Bottom nav — mobile only */}
       <MobileNav />
+      <FeedbackButton />
     </div>
   );
 }
