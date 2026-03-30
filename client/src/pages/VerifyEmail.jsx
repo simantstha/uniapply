@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import apiClient from '../api/client';
+import { LogoWordmark } from '../components/Logo';
 
 export default function VerifyEmail() {
   const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
@@ -30,9 +31,7 @@ export default function VerifyEmail() {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-apple-blue rounded-2xl flex items-center justify-center shadow-apple mb-4">
-            <span className="text-white text-xl font-bold">U</span>
-          </div>
+          <LogoWordmark size="lg" />
         </div>
 
         <div className="card p-8 shadow-apple text-center">

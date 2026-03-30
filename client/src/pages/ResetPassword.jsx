@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon, ArrowLeft } from 'lucide-react';
 import apiClient from '../api/client';
+import { LogoWordmark } from '../components/Logo';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -58,10 +59,8 @@ export default function ResetPassword() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-apple-blue rounded-2xl flex items-center justify-center shadow-apple mb-4">
-            <span className="text-white text-xl font-bold">U</span>
-          </div>
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Set a new password</h1>
+          <LogoWordmark size="lg" />
+          <h1 className="text-2xl font-semibold mt-4" style={{ color: 'var(--text-primary)' }}>Set a new password</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Choose a strong password for your account.</p>
         </div>
 
