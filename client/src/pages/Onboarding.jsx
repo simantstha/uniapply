@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { GraduationCap, BookOpen, FlaskConical, ChevronRight, ChevronLeft, Check, Sparkles, Star, Target, Shield } from 'lucide-react';
+import { LogoWordmark } from '../components/Logo';
 
 const GPA_SCALES = {
   us_4:       { min: 0, max: 4.0,  label: '0–4.0', placeholder: '3.7' },
@@ -251,10 +252,7 @@ export default function Onboarding() {
     <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-          <span className="text-white text-sm font-bold">U</span>
-        </div>
-        <span className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>UniApply</span>
+        <LogoWordmark />
       </div>
 
       {/* Card */}
