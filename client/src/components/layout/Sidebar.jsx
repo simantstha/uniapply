@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Building2, FolderOpen, LogOut, Sun, Moon, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, User, Building2, FolderOpen, LogOut, Sun, Moon, CalendarClock, Bug } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { LogoWordmark } from '../Logo';
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/universities', icon: Building2,     label: 'Universities' },
   { to: '/documents',  icon: FolderOpen,      label: 'Documents' },
   { to: '/timeline',   icon: CalendarClock,   label: 'Timeline' },
+  { to: '/issues',     icon: Bug,             label: 'Report Issue' },
 ];
 
 export default function Sidebar() {

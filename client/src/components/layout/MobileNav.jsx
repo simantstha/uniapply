@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, User, Building2, FolderOpen, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, User, Building2, FolderOpen, CalendarClock, Bug } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/profile',      icon: User,            label: 'Profile' },
   { to: '/documents',    icon: FolderOpen,       label: 'Documents' },
   { to: '/timeline',     icon: CalendarClock,    label: 'Timeline' },
+  { to: '/issues',       icon: Bug,              label: 'Report Issue' },
 ];
 
 export default function MobileNav() {
