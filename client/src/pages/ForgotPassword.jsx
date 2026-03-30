@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon, Mail, ArrowLeft } from 'lucide-react';
+import { LogoWordmark } from '../components/Logo';
 import apiClient from '../api/client';
 
 export default function ForgotPassword() {
@@ -34,9 +35,7 @@ export default function ForgotPassword() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-apple-blue rounded-2xl flex items-center justify-center shadow-apple mb-4">
-            <span className="text-white text-xl font-bold">U</span>
-          </div>
+          <LogoWordmark size="lg" />
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Forgot your password?</h1>
           <p className="text-sm mt-1 text-center" style={{ color: 'var(--text-secondary)' }}>
             Enter your email and we'll send you a reset link.
