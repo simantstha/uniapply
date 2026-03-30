@@ -60,8 +60,7 @@ export default function ResetPassword() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <LogoWordmark size="lg" />
-          </div>
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Set a new password</h1>
+          <h1 className="text-2xl font-semibold mt-4" style={{ color: 'var(--text-primary)' }}>Set a new password</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Choose a strong password for your account.</p>
         </div>
 
