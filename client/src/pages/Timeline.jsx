@@ -180,7 +180,7 @@ export default function Timeline() {
 
       {/* Intro banner — shown until dismissed */}
       {!introDismissed && (
-        <div className="card shadow-apple-sm overflow-hidden mb-2">
+        <div className="card shadow-apple-sm overflow-hidden">
           <div className="px-5 py-4 flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(52,199,89,0.1)' }}>
