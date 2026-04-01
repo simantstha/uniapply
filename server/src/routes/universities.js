@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth.js';
+import { fetchRequirements } from '../services/requirementsService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -119,6 +120,37 @@ router.post('/', async (req, res) => {
     const university = await prisma.university.create({
       data: { ...req.body, userId: req.userId },
     });
+
+    // Fire-and-forget: warm the requirements cache so it's ready when the user opens this university
+    const cacheKey = { universityName: university.name, program: university.program };
+    (async () => {
+      try {
+        const cached = await prisma.universityRequirements.findUnique({ where: { universityName_program: cacheKey } });
+        if (cached) return;
+        const result = await fetchRequirements(university.name, university.program, university.degreeLevel);
+        await prisma.universityRequirements.upsert({
+          where: { universityName_program: cacheKey },
+          create: {
+            universityName: university.name,
+            program: university.program,
+            matchedProgram: result.matched_program || null,
+            requirementsJson: JSON.stringify(result),
+            sourceUrl: result.source_url || null,
+            sourceType: result.source_type || 'ai_knowledge',
+          },
+          update: {
+            matchedProgram: result.matched_program || null,
+            requirementsJson: JSON.stringify(result),
+            sourceUrl: result.source_url || null,
+            sourceType: result.source_type || 'ai_knowledge',
+          },
+        });
+        console.log(`[prefetch] requirements cached for ${university.name} — ${university.program}`);
+      } catch (err) {
+        console.error(`[prefetch] requirements failed for ${university.name}:`, err.message);
+      }
+    })();
+
     res.json(university);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, CalendarClock, ChevronRight, AlertTriangle, Info, X } from 'lucide-react';
+import apiClient from '../api/client';
 
 // ─── Milestone data ───────────────────────────────────────────────────────────
 
@@ -102,6 +103,9 @@ export default function Timeline() {
     localStorage.getItem('uniapply_degree_level') || 'masters'
   );
 
+  // Track whether degree level came from profile (hide selector if so)
+  const [profileDegreeLevel, setProfileDegreeLevel] = useState(null);
+
   const [introDismissed, setIntroDismissed] = useState(() =>
     localStorage.getItem('uniapply_timeline_intro_dismissed') === 'true'
   );
@@ -109,6 +113,20 @@ export default function Timeline() {
   // ── Picker state (controlled selects)
   const [pickerMonth, setPickerMonth] = useState(enrollmentDate.getMonth());
   const [pickerYear,  setPickerYear]  = useState(enrollmentDate.getFullYear());
+
+  // Sync degree level from profile on mount
+  useEffect(() => {
+    apiClient.get('/api/profile').then(res => {
+      const level = res.data?.studyLevel;
+      if (!level) return;
+      const map = { undergraduate: 'undergrad', masters: 'masters', phd: 'phd' };
+      const mapped = map[level];
+      if (mapped) {
+        setDegreeLevel(mapped);
+        setProfileDegreeLevel(mapped);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Sync localStorage
   useEffect(() => {
@@ -254,25 +272,37 @@ export default function Timeline() {
           <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             What are you applying for?
           </label>
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { value: 'undergrad', label: 'Undergraduate' },
-              { value: 'masters',  label: "Master's" },
-              { value: 'phd',      label: 'PhD' },
-            ].map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setDegreeLevel(opt.value)}
-                className="px-4 py-1.5 rounded-xl text-sm font-medium transition-all border"
-                style={degreeLevel === opt.value
-                  ? { background: 'var(--accent)', color: 'white', borderColor: 'var(--accent)' }
-                  : { background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }
-                }
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {profileDegreeLevel ? (
+            <div className="flex items-center gap-2">
+              <span className="px-4 py-1.5 rounded-xl text-sm font-medium border"
+                style={{ background: 'var(--accent)', color: 'white', borderColor: 'var(--accent)' }}>
+                {{ undergrad: 'Undergraduate', masters: "Master's", phd: 'PhD' }[profileDegreeLevel]}
+              </span>
+              <Link to="/profile" className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                Change in Profile →
+              </Link>
+            </div>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: 'undergrad', label: 'Undergraduate' },
+                { value: 'masters',  label: "Master's" },
+                { value: 'phd',      label: 'PhD' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDegreeLevel(opt.value)}
+                  className="px-4 py-1.5 rounded-xl text-sm font-medium transition-all border"
+                  style={degreeLevel === opt.value
+                    ? { background: 'var(--accent)', color: 'white', borderColor: 'var(--accent)' }
+                    : { background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
