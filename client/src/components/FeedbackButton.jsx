@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { Bug } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
 
 export default function FeedbackButton() {
@@ -13,7 +13,7 @@ export default function FeedbackButton() {
         style={{ background: 'var(--accent)', color: '#fff' }}
         title="Report an issue"
       >
-        <MessageSquare size={18} />
+        <Bug size={18} />
       </button>
       {open && <FeedbackModal onClose={() => setOpen(false)} />}
     </>
