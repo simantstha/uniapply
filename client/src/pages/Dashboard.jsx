@@ -409,7 +409,6 @@ export default function Dashboard() {
                   style={{
                     background: isNext ? `rgba(0,113,227,0.03)` : 'transparent',
                     opacity: step.done ? 0.6 : 1,
-                    borderBottom: '1px solid var(--border-subtle)',
                   }}>
                   {isNext ? (
                     /* Expanded current step */
