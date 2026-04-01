@@ -14,6 +14,7 @@ import Onboarding from './pages/Onboarding';
 import Compare from './pages/Compare';
 import ReviewPage from './pages/ReviewPage';
 import Timeline from './pages/Timeline';
+import Issues from './pages/Issues';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
@@ -70,6 +71,7 @@ function App() {
               <Route path="/sop/:universityId/:sopId" element={<SOPWorkshop />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/timeline" element={<Timeline />} />
+              <Route path="/issues" element={<Issues />} />
             </Route>
           </Routes>
         </Router>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, ChevronRight, AlertTriangle, Info } from 'lucide-react';
+import { Calendar, CalendarClock, ChevronRight, AlertTriangle, Info, X } from 'lucide-react';
 
 // ─── Milestone data ───────────────────────────────────────────────────────────
 
@@ -102,6 +102,10 @@ export default function Timeline() {
     localStorage.getItem('uniapply_degree_level') || 'masters'
   );
 
+  const [introDismissed, setIntroDismissed] = useState(() =>
+    localStorage.getItem('uniapply_timeline_intro_dismissed') === 'true'
+  );
+
   // ── Picker state (controlled selects)
   const [pickerMonth, setPickerMonth] = useState(enrollmentDate.getMonth());
   const [pickerYear,  setPickerYear]  = useState(enrollmentDate.getFullYear());
@@ -136,6 +140,11 @@ export default function Timeline() {
     applyPickerDate(pickerMonth, y);
   }
 
+  const dismissIntro = () => {
+    localStorage.setItem('uniapply_timeline_intro_dismissed', 'true');
+    setIntroDismissed(true);
+  };
+
   // ── Compute milestones
   const baseMilestones = degreeLevel === 'undergrad' ? UNDERGRAD_MILESTONES : MASTERS_PHD_MILESTONES;
   const milestones = baseMilestones
@@ -168,6 +177,42 @@ export default function Timeline() {
           Backwards-calculated milestones from your target enrollment date.
         </p>
       </div>
+
+      {/* Intro banner — shown until dismissed */}
+      {!introDismissed && (
+        <div className="card shadow-apple-sm overflow-hidden">
+          <div className="px-5 py-4 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(52,199,89,0.1)' }}>
+              <CalendarClock size={20} style={{ color: '#34C759' }} strokeWidth={1.6} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>How your timeline works</p>
+              <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                Set your target enrollment date below and we'll work backwards to give you a personalised milestone schedule — covering test prep, LOR requests, SOP drafts, and application deadlines.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {[
+                  'Application deadline countdown per school',
+                  'Test prep milestones (GRE, TOEFL)',
+                  'LOR request reminders',
+                  'SOP draft & revision schedule',
+                ].map(item => (
+                  <span key={item} className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <span style={{ color: '#34C759' }}>✓</span> {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button onClick={dismissIntro}
+              className="flex-shrink-0 p-1 rounded-lg transition-opacity hover:opacity-60"
+              style={{ color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}
+              aria-label="Dismiss">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Controls card */}
       <div className="card p-5 shadow-apple-sm space-y-5">

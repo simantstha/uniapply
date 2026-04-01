@@ -3,7 +3,7 @@ import { UniversitiesSkeleton } from '../components/common/Skeleton';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import ErrorCard from '../components/ErrorCard';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows, Sparkles, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows, Sparkles, CheckCircle2, Circle, Building2 } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 import ApplicationStatusPicker from '../components/ApplicationStatusPicker';
 import PreflightDrawer from '../components/PreflightDrawer';
@@ -333,8 +333,37 @@ export default function Universities() {
       ) : fetchError ? (
         <ErrorCard message="Couldn't load universities" onRetry={fetchData} />
       ) : filtered.length === 0 && universities.length === 0 ? (
-        <div className="card p-12 text-center shadow-apple-sm">
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>No universities added yet. Start by searching for programs above.</p>
+        <div className="card p-8 shadow-apple-sm" style={{ textAlign: 'center' }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'rgba(59,130,246,0.1)' }}>
+            <Building2 size={26} style={{ color: '#3B82F6' }} strokeWidth={1.6} />
+          </div>
+          <p className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Build your school list</p>
+          <p className="text-sm mb-5 mx-auto" style={{ color: 'var(--text-secondary)', maxWidth: '360px', lineHeight: 1.6 }}>
+            Add universities you're interested in, then tag each one as{' '}
+            <strong style={{ color: '#7C3AED' }}>Dream</strong>,{' '}
+            <strong style={{ color: '#3B82F6' }}>Target</strong>, or{' '}
+            <strong style={{ color: '#16A34A' }}>Safety</strong>.{' '}
+            Your SOPs, documents, and deadlines are all organized per university.
+          </p>
+          <div className="flex justify-center gap-3 mb-6 flex-wrap">
+            <div className="px-3 py-2 rounded-xl text-left" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', minWidth: '100px' }}>
+              <p className="text-xs font-bold mb-1" style={{ color: '#a78bfa' }}>⭐ Dream</p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Reach schools — apply anyway</p>
+            </div>
+            <div className="px-3 py-2 rounded-xl text-left" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', minWidth: '100px' }}>
+              <p className="text-xs font-bold mb-1" style={{ color: '#60a5fa' }}>🎯 Target</p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Good match for your profile</p>
+            </div>
+            <div className="px-3 py-2 rounded-xl text-left" style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', minWidth: '100px' }}>
+              <p className="text-xs font-bold mb-1" style={{ color: '#4ade80' }}>🛡 Safety</p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Strong admit chance</p>
+            </div>
+          </div>
+          <button onClick={() => setShowModal(true)}
+            className="btn-primary">
+            + Add your first university
+          </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center shadow-apple-sm">

@@ -28,6 +28,7 @@ model User {
   sops         SOP[]
   documents    Document[]
   lors         LetterOfRecommendation[]
+  issueReports IssueReport[]
 
   @@map("users")
 }
@@ -203,6 +204,19 @@ model LetterOfRecommendation {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("letters_of_recommendation")
+}
+
+model IssueReport {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title             String
+  description       String
+  githubIssueUrl    String   @map("github_issue_url")
+  githubIssueNumber Int      @map("github_issue_number")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("issue_reports")
 }
 
 model UniversityRequirements {

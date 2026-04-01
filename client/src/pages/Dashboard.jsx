@@ -36,6 +36,7 @@ function getJourneySteps(data) {
       num: 1,
       title: 'Complete your profile',
       desc: 'Add GPA, test scores, and background info',
+      why: 'Your GPA and test scores power the AI university suggestions and fit scores.',
       done: (data?.profileCompletion ?? 0) >= 60,
       partial: (data?.profileCompletion ?? 0) > 0,
       to: '/profile',
@@ -47,6 +48,7 @@ function getJourneySteps(data) {
       num: 2,
       title: 'Add your universities',
       desc: 'Build a dream, target & safety school list',
+      why: 'Your SOPs, documents, and deadlines are all organized per school — this unlocks everything else.',
       done: (data?.universities ?? 0) >= 3,
       partial: (data?.universities ?? 0) > 0,
       to: '/universities',
@@ -58,6 +60,7 @@ function getJourneySteps(data) {
       num: 3,
       title: 'Upload your documents',
       desc: 'Transcripts, test scores, recommendation letters',
+      why: 'Upload once, attach to any university. Most programs require transcripts and test score reports.',
       done: (data?.documents ?? 0) >= 2,
       partial: (data?.documents ?? 0) > 0,
       to: '/documents',
@@ -69,6 +72,7 @@ function getJourneySteps(data) {
       num: 4,
       title: 'Write your personal statement',
       desc: 'Select a university to open its SOP editor',
+      why: 'Open any university from your list to start its SOP in the guided editor.',
       done: (data?.sops ?? 0) > 0,
       partial: false,
       to: '/universities',
@@ -80,6 +84,7 @@ function getJourneySteps(data) {
       num: 5,
       title: 'Get AI feedback',
       desc: 'Select a university, then open a draft to get AI feedback',
+      why: 'The AI critiques your SOP across clarity, fit, and narrative — and gives it a score.',
       done: (data?.critiques ?? 0) > 0,
       partial: false,
       to: '/universities',
@@ -400,48 +405,79 @@ export default function Dashboard() {
               const isNext = nextStep?.num === step.num;
               return (
                 <div key={step.num}
-                  className="px-5 py-3.5 flex items-center gap-3 transition-all"
-                  style={{ background: isNext ? `rgba(0,113,227,0.03)` : 'transparent', opacity: step.done ? 0.6 : 1 }}>
-                  {/* Status icon */}
-                  <div className="flex-shrink-0">
-                    {step.done ? (
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: '#34C759' }}>
-                        <Check size={12} color="white" strokeWidth={3} />
+                  className="px-5 py-3.5 transition-all"
+                  style={{
+                    background: isNext ? `rgba(0,113,227,0.03)` : 'transparent',
+                    opacity: step.done ? 0.6 : 1,
+                  }}>
+                  {isNext ? (
+                    /* Expanded current step */
+                    <div className="flex items-start gap-3">
+                      {/* Status icon */}
+                      <div className="flex-shrink-0 mt-0.5">
+                        {step.partial ? (
+                          <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: step.color }}>
+                            <div className="w-2 h-2 rounded-full" style={{ background: step.color }} />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: step.color }}>
+                            <span className="text-xs font-medium" style={{ color: step.color }}>{step.num}</span>
+                          </div>
+                        )}
                       </div>
-                    ) : step.partial ? (
-                      <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: step.color }}>
-                        <div className="w-2 h-2 rounded-full" style={{ background: step.color }} />
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{step.title}</p>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: step.color, color: 'white', fontSize: '9px', letterSpacing: '0.5px' }}>
+                            UP NEXT
+                          </span>
+                        </div>
+                        <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step.why}</p>
+                        <Link to={step.to}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                          style={{ background: step.color, color: 'white' }}>
+                          {step.cta} <ChevronRight size={12} />
+                        </Link>
                       </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--border)' }}>
-                        <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{step.num}</span>
+                    </div>
+                  ) : (
+                    /* Collapsed step (done or future) */
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        {step.done ? (
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: '#34C759' }}>
+                            <Check size={12} color="white" strokeWidth={3} />
+                          </div>
+                        ) : step.partial ? (
+                          <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: step.color }}>
+                            <div className="w-2 h-2 rounded-full" style={{ background: step.color }} />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--border)' }}>
+                            <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{step.num}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Icon */}
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: step.done ? 'rgba(52,199,89,0.1)' : `${step.color}14` }}>
-                    <Icon size={14} style={{ color: step.done ? '#34C759' : step.color }} strokeWidth={1.8} />
-                  </div>
-
-                  {/* Text */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: step.done ? 'var(--text-secondary)' : 'var(--text-primary)' }}>
-                      {step.title}
-                    </p>
-                    <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{step.desc}</p>
-                  </div>
-
-                  {/* CTA */}
-                  {!step.done && (
-                    <Link to={step.to}
-                      className="flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all"
-                      style={isNext
-                        ? { background: 'var(--accent)', color: 'white' }
-                        : { color: 'var(--text-tertiary)', background: 'var(--bg-secondary)' }}>
-                      {isNext ? step.cta : <ChevronRight size={13} />}
-                    </Link>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: step.done ? 'rgba(52,199,89,0.1)' : `${step.color}14` }}>
+                        <Icon size={14} style={{ color: step.done ? '#34C759' : step.color }} strokeWidth={1.8} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium" style={{ color: step.done ? 'var(--text-secondary)' : 'var(--text-primary)', textDecoration: step.done ? 'line-through' : 'none' }}>
+                          {step.title}
+                        </p>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{step.desc}</p>
+                      </div>
+                      {!step.done && (
+                        <Link to={step.to}
+                          className="flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg"
+                          style={{ color: 'var(--text-tertiary)', background: 'var(--bg-secondary)' }}>
+                          <ChevronRight size={13} />
+                        </Link>
+                      )}
+                    </div>
                   )}
                 </div>
               );
