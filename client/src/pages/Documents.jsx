@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/client';
 import ErrorCard from '../components/ErrorCard';
-import { Upload, FileText, Trash2, Download, File, Image, X, Tags, UserCheck, Plus, ChevronDown, Mail } from 'lucide-react';
+import { Upload, FileText, Trash2, Download, File, FolderOpen, Image, X, Tags, UserCheck, Plus, ChevronDown, Mail } from 'lucide-react';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
 const DOC_TYPES = [
@@ -524,10 +524,46 @@ export default function Documents() {
       ) : fetchError ? (
         <ErrorCard message="Couldn't load documents" onRetry={fetchDocs} />
       ) : docs.length === 0 ? (
-        <div className="card p-10 text-center shadow-apple-sm">
-          <File size={28} className="mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} />
-          <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No documents uploaded yet</p>
-          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Upload your transcripts, test scores, and other application materials</p>
+        <div className="card p-8 shadow-apple-sm">
+          <div className="text-center mb-6">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(212,168,67,0.1)' }}>
+              <FolderOpen size={26} style={{ color: '#D4A843' }} strokeWidth={1.6} />
+            </div>
+            <p className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Your document vault</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)', maxWidth: '360px', margin: '0 auto', lineHeight: 1.6 }}>
+              Upload your supporting documents once — then attach them to any university. No re-uploading for each school.
+            </p>
+          </div>
+          <div className="space-y-2 mb-6">
+            <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+              <span className="text-lg flex-shrink-0">📄</span>
+              <div>
+                <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>Transcripts</p>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Official academic records from your institution — most programs require this</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+              <span className="text-lg flex-shrink-0">📝</span>
+              <div>
+                <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>Test Scores</p>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>GRE, TOEFL, IELTS, SAT score reports sent to each university</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+              <span className="text-lg flex-shrink-0">✉️</span>
+              <div>
+                <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>Recommendation Letters</p>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>LORs from professors or supervisors — track status per recommender</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center">
+            <button onClick={() => inputRef.current?.click()}
+              className="btn-primary">
+              + Upload your first document
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-5">
