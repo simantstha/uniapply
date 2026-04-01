@@ -2,7 +2,7 @@
 
 A study-abroad application platform built for South and Southeast Asian students — starting with Nepal. UniApply replaces expensive consultancies (NPR 60,000+) with an AI-powered toolkit that guides students through every step of the graduate school application process.
 
-**Live:** [uandiapply.vercel.app](https://uandiapply.vercel.app)
+**Live:** [uandiapply.com](https://www.uandiapply.com/)
 
 ---
 
