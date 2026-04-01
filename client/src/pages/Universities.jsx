@@ -3,7 +3,7 @@ import { UniversitiesSkeleton } from '../components/common/Skeleton';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import ErrorCard from '../components/ErrorCard';
-import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows, Sparkles, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Calendar, PenLine, X, Search, Pencil, CheckSquare, Square, GitCompareArrows, Sparkles, CheckCircle2, Circle, Building2 } from 'lucide-react';
 import { searchUniversities } from '../data/usUniversities';
 import ApplicationStatusPicker from '../components/ApplicationStatusPicker';
 import PreflightDrawer from '../components/PreflightDrawer';
