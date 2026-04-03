@@ -20,9 +20,20 @@ const GPA_SCALES = {
 
 const TARGET_COUNTRIES = ['USA', 'Canada', 'Australia', 'UK', 'Germany', 'Japan', 'South Korea', 'Netherlands', 'New Zealand'];
 
+const NEPALI_INSTITUTIONS = [
+  'Tribhuvan University (TU)',
+  'Kathmandu University (KU)',
+  'Pokhara University (PU)',
+  'Purbanchal University',
+  'Far Western University',
+  'Mid-Western University',
+  'Agriculture and Forestry University (AFU)',
+  'Other',
+];
+
 const defaultForm = {
   studyLevel: 'masters',
-  undergraduateInstitution: '', undergraduateMajor: '', graduationYear: '', gpa: '', gpaScale: 'us_4',
+  undergraduateInstitution: '', undergraduateMajor: '', graduationYear: '', gpa: '', gpaScale: 'us_4', nebScore: '',
   satScore: '', actScore: '',
   greVerbal: '', greQuant: '', greWriting: '', toeflScore: '', ieltsScore: '',
   fieldOfStudy: '', careerGoals: '', researchInterests: '', workExperienceYears: '', extracurriculars: '',
@@ -69,6 +80,7 @@ export default function Profile() {
     ieltsScore:        { min: 0,   max: 9,    label: '0–9' },
     graduationYear:    { min: 1990, max: 2035, label: '1990–2035' },
     workExperienceYears: { min: 0, max: 50,   label: '0–50' },
+    nebScore:          { min: 0,   max: 100,  label: '0–100' },
   };
 
   const [errors, setErrors] = useState({});
@@ -100,7 +112,7 @@ export default function Profile() {
     setLoading(true);
     try {
       const payload = { ...form };
-      ['gpa', 'satScore', 'actScore', 'greVerbal', 'greQuant', 'greWriting', 'toeflScore', 'ieltsScore', 'graduationYear', 'workExperienceYears']
+      ['gpa', 'satScore', 'actScore', 'greVerbal', 'greQuant', 'greWriting', 'toeflScore', 'ieltsScore', 'graduationYear', 'workExperienceYears', 'nebScore']
         .forEach(k => { payload[k] = payload[k] !== '' ? Number(payload[k]) : null; });
       await apiClient.put('/api/profile', payload);
       setSaved(true);
@@ -177,10 +189,36 @@ export default function Profile() {
         {step === 1 && (
           <div className="space-y-4">
             <SectionTitle>{isUndergrad ? 'Current School' : 'Academic Background'}</SectionTitle>
-            <Field
-              label={isUndergrad ? 'High School / Current Institution' : 'Undergraduate Institution'}
-              value={form.undergraduateInstitution} onChange={set('undergraduateInstitution')}
-              placeholder={isUndergrad ? 'e.g. Kathmandu Model School' : 'e.g. Tribhuvan University'} />
+            <div>
+              <div className="label">{isUndergrad ? 'High School / Current Institution' : 'Undergraduate Institution'}</div>
+              <select
+                value={form.undergraduateInstitution}
+                onChange={set('undergraduateInstitution')}
+                className="input">
+                <option value="">Select your university</option>
+                {NEPALI_INSTITUTIONS.map(inst => (
+                  <option key={inst} value={inst}>{inst}</option>
+                ))}
+              </select>
+            </div>
+            {form.studyLevel === 'undergraduate' && (
+              <div>
+                <label className="label">NEB / HSEB Score <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  value={form.nebScore}
+                  onChange={set('nebScore')}
+                  placeholder="e.g. 78.5"
+                  className="input"
+                  style={errors.nebScore ? { borderColor: '#FF3B30', background: 'rgba(255,59,48,0.04)' } : {}}
+                />
+                {errors.nebScore && <p className="text-xs mt-1" style={{ color: '#FF3B30' }}>{errors.nebScore}</p>}
+                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>Your +2 percentage score from NEB or HSEB</p>
+              </div>
+            )}
             <Field
               label={isUndergrad ? 'Intended Major' : 'Undergraduate Major'}
               value={isUndergrad ? form.fieldOfStudy : form.undergraduateMajor}

@@ -38,48 +38,66 @@ Write in first person. Be specific, not generic. Avoid clichés like "from a you
 }
 
 export async function suggestUniversities(profile, degreeLevel) {
-  const targetCountries = profile.targetCountries
-    ? profile.targetCountries.split(',').filter(Boolean)
-    : [];
-  const countryRule = targetCountries.length > 0
-    ? `- Only suggest universities in these countries: ${targetCountries.join(', ')}`
-    : `- Vary by country (USA, Canada, UK, Australia, Germany) when appropriate`;
+  // Build GRE string
+  const greparts = [];
+  if (profile.greVerbal) greparts.push(`Verbal ${profile.greVerbal}`);
+  if (profile.greQuant)  greparts.push(`Quant ${profile.greQuant}`);
+  if (profile.greWriting) greparts.push(`Writing ${profile.greWriting}`);
+  const greString = greparts.length > 0 ? greparts.join(', ') : 'not specified';
 
-  const prompt = `You are a university admissions advisor helping a South Asian student find the right schools.
+  // Build work experience string
+  const workString = (profile.workExperience || profile.workExperienceYears)
+    ? [
+        profile.workExperience || null,
+        profile.workExperienceYears ? `${profile.workExperienceYears} years` : null
+      ].filter(Boolean).join(', ')
+    : 'not specified';
 
-Student Profile:
+  // NEB score (undergrad only)
+  const nebString = (degreeLevel === 'undergraduate' && profile.nebScore)
+    ? `${profile.nebScore}%`
+    : 'not applicable';
+
+  const prompt = `You are a university admissions advisor specializing in Nepali students applying to US universities for international degree programs. Students require an F-1 student visa and often need partial or full financial support. Recommend US universities where this student has a realistic and worthwhile chance of admission.
+
+STUDENT PROFILE:
 - Degree level: ${degreeLevel}
+- Home institution: ${profile.undergraduateInstitution || 'not specified'} (Nepali institution — apply standard international credential adjustment when assessing GPA competitiveness; TU/KU/PU grades are often viewed conservatively by US admissions)
 - Field of study: ${profile.fieldOfStudy || 'not specified'}
 - Career goals: ${profile.careerGoals || 'not specified'}
-- GPA: ${profile.gpa ? `${profile.gpa} (${profile.gpaScale})` : 'not specified'}
+- GPA: ${profile.gpa ? `${profile.gpa} / ${profile.gpaScale}` : 'not specified'}
+- NEB/HSEB score: ${nebString}
+- GRE: ${greString}
 - TOEFL: ${profile.toeflScore || 'not specified'}
 - IELTS: ${profile.ieltsScore || 'not specified'}
 - Research interests: ${profile.researchInterests || 'not specified'}
-- Work experience: ${profile.workExperience || profile.workExperienceYears ? `${profile.workExperience || ''} (${profile.workExperienceYears || 0} years)` : 'not specified'}
+- Work experience: ${workString}
 - Extracurriculars: ${profile.extracurriculars || 'not specified'}
 - Community service: ${profile.communityService || 'not specified'}
 
-Suggest exactly 9 universities: 3 Dream schools, 3 Target schools, and 3 Safety schools.
+COUNTRY: USA only. All 9 universities must be in the United States.
 
-Rules:
-- Dream: prestigious programs where admission is competitive given the profile
-- Target: strong programs where the student has a realistic shot
-- Safety: solid programs where the student is likely to get in
-${countryRule}
-- Match the specific field of study and degree level
-- Be specific about the PROGRAM name, not just the university
-- Factor in the student's work experience and community involvement when assessing fit
+TIER DEFINITIONS — apply these strictly based on international student admission data:
+- dream: Student profile is below the typical admitted international applicant for this program. Estimated acceptance probability under 20% for international students. High upside if accepted.
+- target: Profile roughly matches typical admitted international applicants. Estimated acceptance probability 20–50% for international students.
+- safety: Profile exceeds typical requirements for international applicants. Acceptance probability above 60%. Must be programs the student would genuinely enroll in.
 
-Return ONLY a JSON array with exactly 9 objects, no explanation:
-[
-  {
-    "name": "Massachusetts Institute of Technology",
-    "program": "MS Computer Science",
-    "country": "USA",
-    "tier": "dream",
-    "reason": "One sentence on why this fits the student's goals and background"
-  }
-]`;
+HARD RULES:
+1. Never suggest a program where the student fails a hard minimum requirement (e.g., TOEFL below 80, IELTS below 6.5, GPA below published minimum). If in doubt, exclude it.
+2. Use the full specific campus name — "University of California, San Diego" not "University of California".
+3. No two entries may share the same university name.
+4. If fewer than 4 profile fields are provided, note the limited information in each reason.
+5. For PhD programs, note whether the program typically funds international students via TA/RA.
+
+OUTPUT: Return ONLY a valid JSON array — no markdown, no explanation, no code fences. Exactly 9 objects in this order: 3 dream first, then 3 target, then 3 safety.
+
+[{
+  "name": "Full university name including campus",
+  "program": "Exact program name as listed on the university website",
+  "country": "USA",
+  "tier": "dream",
+  "reason": "2-3 sentences: why this tier given the student's specific profile, and why this program fits their stated goals"
+}]`;
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
