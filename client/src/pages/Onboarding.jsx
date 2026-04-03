@@ -58,6 +58,17 @@ const TARGET_COUNTRIES = [
   'Japan', 'South Korea', 'Netherlands', 'New Zealand',
 ];
 
+const NEPALI_INSTITUTIONS = [
+  'Tribhuvan University (TU)',
+  'Kathmandu University (KU)',
+  'Pokhara University (PU)',
+  'Purbanchal University',
+  'Far Western University',
+  'Mid-Western University',
+  'Agriculture and Forestry University (AFU)',
+  'Other',
+];
+
 const buildTimelines = () => {
   const now = new Date();
   const y = now.getFullYear();
@@ -108,8 +119,9 @@ export default function Onboarding() {
   const [sat, setSat] = useState('');
   const [gre, setGre] = useState('');
   const [scoreErrors, setScoreErrors] = useState({});
+  const [nebScore, setNebScore] = useState('');
 
-  const [targetCountries, setTargetCountries] = useState([]);
+  const [targetCountries, setTargetCountries] = useState(['USA']);
 
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
@@ -173,6 +185,7 @@ export default function Onboarding() {
         fieldOfStudy,
         careerGoals: careerGoals || null,
         undergraduateInstitution: institution || null,
+        nebScore: nebScore ? parseFloat(nebScore) : null,
         gpa: gpa ? parseFloat(gpa) : null,
         gpaScale,
         toeflScore: toefl ? parseInt(toefl) : null,
@@ -446,10 +459,39 @@ export default function Onboarding() {
                 </div>
                 <div>
                   <label className="label">{isUndergrad ? 'Current School' : 'Undergrad Institution'}</label>
-                  <input value={institution} onChange={e => setInstitution(e.target.value)}
-                    placeholder="e.g. Tribhuvan University" className="input text-sm" />
+                  <select
+                    value={institution}
+                    onChange={e => setInstitution(e.target.value)}
+                    className="w-full text-sm rounded-xl px-3 py-2.5 border outline-none transition-all"
+                    style={{ background: 'var(--bg-secondary)', color: institution ? 'var(--text-primary)' : 'var(--text-tertiary)', borderColor: 'var(--border)', fontFamily: 'inherit' }}
+                  >
+                    <option value="">Select your university</option>
+                    {NEPALI_INSTITUTIONS.map(inst => (
+                      <option key={inst} value={inst}>{inst}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
+
+              {studyLevel === 'undergraduate' && (
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+                    NEB / HSEB Score <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    value={nebScore}
+                    onChange={e => setNebScore(e.target.value)}
+                    placeholder="e.g. 78.5"
+                    className="w-full text-sm rounded-xl px-3 py-2.5 border outline-none transition-all"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderColor: 'var(--border)', fontFamily: 'inherit' }}
+                  />
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>Your +2 percentage score from NEB or HSEB</p>
+                </div>
+              )}
 
               <div className="p-3 rounded-xl text-xs" style={{ background: 'rgba(0,113,227,0.06)', color: 'var(--text-secondary)' }}>
                 💡 Don't have test scores yet? That's fine — most students take them in 11th–12th grade. You can add them later.
