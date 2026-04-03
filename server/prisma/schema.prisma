@@ -49,6 +49,7 @@ model Profile {
   undergraduateInstitution String?  @map("undergraduate_institution")
   undergraduateMajor       String?  @map("undergraduate_major")
   graduationYear           Int?     @map("graduation_year")
+  nebScore                 Float?   @map("neb_score")  // NEB/HSEB percentage score (Nepal +2)
   workExperienceYears      Int?     @map("work_experience_years")
   fieldOfStudy             String?  @map("field_of_study")
   careerGoals              String?  @map("career_goals")
